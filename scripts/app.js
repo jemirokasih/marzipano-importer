@@ -161,6 +161,9 @@
     // Add panoramas
     elements.addPanoramasInput.addEventListener("change", handleAddPanoramas);
 
+    // Panorama list drag and drop container handlers
+    setupPanoramaListDragHandlers();
+
     // Panorama settings buttons
     elements.infoHotspotButton.addEventListener("click", startAddInfoHotspot);
     elements.linkHotspotButton.addEventListener("click", startAddLinkHotspot);
@@ -235,12 +238,13 @@
       const panoramaEl = document.createElement("div");
       panoramaEl.className =
         "panorama" + (index === state.currentSceneIndex ? " selected" : "");
+      panoramaEl.setAttribute("data-index", index);
       panoramaEl.onclick = () => selectScene(index);
 
       panoramaEl.innerHTML = `
         <div class="handle">
           <svg class="icon" viewBox="0 0 24 24">
-            <path d="M9,3H15L17,5H21A2,2 0 0,1 23,7V19A2,2 0 0,1 21,21H3A2,2 0 0,1 1,19V7A2,2 0 0,1 3,5H7L9,3M12,18A5,5 0 0,0 17,13A5,5 0 0,0 12,8A5,5 0 0,0 7,13A5,5 0 0,0 12,18M12,9.5A3.5,3.5 0 0,1 15.5,13A3.5,3.5 0 0,1 12,16.5A3.5,3.5 0 0,1 8.5,13A3.5,3.5 0 0,1 12,9.5Z"/>
+            <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
           </svg>
         </div>
         <div class="info">
@@ -268,7 +272,174 @@
         </div>
       `;
 
+      // Setup drag and drop
+      setupPanoramaDrag(panoramaEl, index);
+
       elements.panoramaList.appendChild(panoramaEl);
+    });
+  }
+
+  // Setup Drag and Drop for Panorama List
+  let draggedPanoramaIndex = null;
+
+  function setupPanoramaDrag(panoramaEl, index) {
+    const handle = panoramaEl.querySelector(".handle");
+
+    if (!handle) return;
+
+    // Prevent click on handle from selecting scene
+    handle.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
+    // Make handle draggable - must be set before adding listeners
+    handle.setAttribute("draggable", "true");
+    handle.style.cursor = "grab";
+
+    // Start drag
+    handle.addEventListener("dragstart", (e) => {
+      draggedPanoramaIndex = index;
+      panoramaEl.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", index.toString());
+      // Set a drag image
+      e.dataTransfer.setDragImage(panoramaEl, 0, 0);
+      handle.style.cursor = "grabbing";
+      e.stopPropagation();
+    });
+
+    // End drag
+    handle.addEventListener("dragend", (e) => {
+      panoramaEl.classList.remove("dragging");
+      handle.style.cursor = "grab";
+      // Remove drag-over class from all panoramas
+      document.querySelectorAll(".panorama").forEach((el) => {
+        el.classList.remove("drag-over");
+      });
+      draggedPanoramaIndex = null;
+    });
+
+    // Drag over
+    panoramaEl.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (draggedPanoramaIndex === null || draggedPanoramaIndex === index) {
+        return;
+      }
+
+      e.dataTransfer.dropEffect = "move";
+      panoramaEl.classList.add("drag-over");
+    });
+
+    // Drag leave
+    panoramaEl.addEventListener("dragleave", (e) => {
+      panoramaEl.classList.remove("drag-over");
+    });
+
+    // Drop
+    panoramaEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      panoramaEl.classList.remove("drag-over");
+
+      if (draggedPanoramaIndex !== null && draggedPanoramaIndex !== index) {
+        // Calculate the actual drop position
+        const rect = panoramaEl.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const dropIndex = e.clientY < midY ? index : index + 1;
+
+        reorderScenes(draggedPanoramaIndex, dropIndex);
+      }
+    });
+  }
+
+  // Reorder Scenes
+  function reorderScenes(fromIndex, toIndex) {
+    if (fromIndex === toIndex) return;
+
+    const scenes = state.tourData.scenes;
+    const [movedScene] = scenes.splice(fromIndex, 1);
+
+    // Adjust toIndex if we're moving forward (element was removed before target)
+    const adjustedToIndex = toIndex > fromIndex ? toIndex - 1 : toIndex;
+    scenes.splice(adjustedToIndex, 0, movedScene);
+
+    // Update current scene index if needed
+    if (state.currentSceneIndex === fromIndex) {
+      state.currentSceneIndex = adjustedToIndex;
+    } else if (
+      state.currentSceneIndex > fromIndex &&
+      state.currentSceneIndex <= adjustedToIndex
+    ) {
+      state.currentSceneIndex--;
+    } else if (
+      state.currentSceneIndex < fromIndex &&
+      state.currentSceneIndex >= adjustedToIndex
+    ) {
+      state.currentSceneIndex++;
+    }
+
+    // Re-render the list
+    renderPanoramaList();
+
+    // Re-render current scene if it changed
+    if (state.currentScene) {
+      renderScene(state.currentScene);
+    }
+
+    state.hasUnsavedChanges = true;
+  }
+
+  // Setup drag handlers for panorama list container
+  function setupPanoramaListDragHandlers() {
+    elements.panoramaList.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (draggedPanoramaIndex === null) {
+        return;
+      }
+
+      e.dataTransfer.dropEffect = "move";
+    });
+
+    elements.panoramaList.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (draggedPanoramaIndex === null) {
+        return;
+      }
+
+      // Remove all drag-over classes
+      document.querySelectorAll(".panorama").forEach((el) => {
+        el.classList.remove("drag-over");
+      });
+
+      // Find drop position
+      const panoramas = Array.from(
+        elements.panoramaList.querySelectorAll(".panorama:not(.dragging)")
+      );
+      let dropIndex = panoramas.length;
+
+      for (let i = 0; i < panoramas.length; i++) {
+        const rect = panoramas[i].getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+          dropIndex = parseInt(panoramas[i].getAttribute("data-index"));
+          break;
+        }
+      }
+
+      // If dropped after last element
+      if (dropIndex === panoramas.length) {
+        dropIndex = state.tourData.scenes.length;
+      }
+
+      if (draggedPanoramaIndex !== dropIndex) {
+        reorderScenes(draggedPanoramaIndex, dropIndex);
+      }
     });
   }
 

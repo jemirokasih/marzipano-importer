@@ -284,6 +284,10 @@ textarea {
   border-bottom: 1px solid #535352;
   cursor: pointer;
   transition: background-color 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .panorama:hover,
@@ -300,12 +304,36 @@ textarea {
   width: 40px;
   border-right: 2px solid #535352;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
+.panorama .handle:active {
+  cursor: grabbing;
+}
+
+.panorama .handle[draggable="true"] {
+  -webkit-user-drag: element;
 }
 
 .panorama .handle .icon {
   width: 20px;
   height: 20px;
   fill: #535352;
+  pointer-events: none;
+}
+
+.panorama.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.panorama.drag-over {
+  border-top: 2px solid #2a94d1;
 }
 
 .panorama .info {
