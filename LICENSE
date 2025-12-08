@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 Dương Tùng Anh
+Copyright (c) 2025 Marzipano Importer Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+This software is designed to work with Marzipano, which is licensed under
+the Apache License 2.0. See https://github.com/google/marzipano for more
+information about Marzipano.
+
+Third-party Dependencies:
+
+- JSZip: MIT License (https://stuk.github.io/jszip/)
