@@ -1,0 +1,41 @@
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+test/
+*.test.js
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build outputs (if added later)
+dist/
+build/
+
+# Dependencies (if added later)
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Coverage directory (if testing added)
+coverage/
+
+# Cache
+.cache/
+

@@ -1,0 +1,6 @@
+name = "marzipano-importer"
+compatibility_date = "2025-12-08"
+preview_urls = false
+
+[assets]
+directory = "."
