@@ -24,6 +24,7 @@
     scene: null,
     pendingHotspot: null,
     sceneImages: {}, // Store images for scenes
+    importedArchive: null, // Preserve non-tour files from imported archives
     addingHotspot: null, // "info", "link", or "initialView"
     hasUnsavedChanges: false, // Track if there are unsaved changes
   };
@@ -1818,9 +1819,14 @@
 
   // Process Tour ZIP
   async function processTourZip(zip) {
+    state.importedArchive = null;
+
     // Find and parse tour data first
     let tourData = null;
     let dataContent = null;
+    let dataFilePath = "data.js";
+    let tilesPrefix = "tiles/";
+    const preservedFiles = {};
 
     // Look for data.js (could be in root or app-files/)
     let dataFile = zip.file(/app-files\/data\.js$/i)[0];
@@ -1829,6 +1835,11 @@
     }
 
     if (dataFile) {
+      dataFilePath = dataFile.name;
+      if (dataFilePath.startsWith("app-files/")) {
+        tilesPrefix = "app-files/tiles/";
+      }
+
       dataContent = await dataFile.async("string");
       const match = dataContent.match(/var\s+\w+\s*=\s*({[\s\S]*});?\s*$/);
       if (match) {
@@ -1908,6 +1919,7 @@
 
     // Load all tile images
     const tilePromises = [];
+    const preservedFilePromises = [];
     const tileData = {};
 
     // Iterate through all files and find tile images
@@ -1924,14 +1936,10 @@
       const isTileImage =
         relativePath.match(/\.(jpg|jpeg|png)$/i) &&
         (relativePath.startsWith("app-files/tiles/") ||
-          relativePath.startsWith("tiles/"));
+          relativePath.startsWith("tiles/")) &&
+        isStandardTilePath(relativePath);
 
       if (!isTileImage) {
-        return;
-      }
-
-      // Skip preview.jpg files
-      if (relativePath.includes("preview.jpg")) {
         return;
       }
 
@@ -1977,10 +1985,38 @@
         }
       });
       tilePromises.push(promise);
+
+      if (relativePath.startsWith("app-files/tiles/")) {
+        tilesPrefix = "app-files/tiles/";
+      }
+    });
+
+    zip.forEach(function (relativePath, file) {
+      if (file.dir) {
+        return;
+      }
+
+      const isTourDataFile =
+        relativePath === dataFilePath || relativePath.match(/app-data\.json$/i);
+      const isTileFile =
+        (relativePath.startsWith("app-files/tiles/") ||
+          relativePath.startsWith("tiles/")) &&
+        isStandardTilePath(relativePath);
+
+      if (isTourDataFile || isTileFile) {
+        return;
+      }
+
+      preservedFilePromises.push(
+        file.async("uint8array").then(function (content) {
+          preservedFiles[relativePath] = content;
+        })
+      );
     });
 
     console.log("Found", tilePromises.length, "tile files to process");
     await Promise.all(tilePromises);
+    await Promise.all(preservedFilePromises);
 
     console.log("Loaded tiles for scenes:", Object.keys(tileData));
     console.log(
@@ -2011,14 +2047,399 @@
 
     // Update state
     state.tourData = tourData;
+    state.importedArchive = {
+      dataFilePath: dataFilePath,
+      tilesPrefix: tilesPrefix,
+      preservedFiles: preservedFiles,
+    };
     elements.projectName.value = tourData.name || "Imported Project";
     markAsSaved(); // Import resets unsaved changes
 
     console.log("Import complete. Total scenes:", tourData.scenes.length);
   }
 
+  function isStandardTilePath(relativePath) {
+    return /^(app-files\/)?tiles\/[^/]+\/[^/]+\/[^/]+\/[^/]+\/[^/]+\.(jpg|jpeg|png)$/i.test(
+      relativePath
+    );
+  }
+
+  function buildSceneListHtml(scenes) {
+    return scenes
+      .map(
+        (scene) => `
+      <a href="javascript:void(0)" class="scene" data-id="${scene.id}">
+        <li class="text">${scene.name}</li>
+      </a>`
+      )
+      .join("\n");
+  }
+
+  function updateExportedIndexHtml(indexHtml, tourData) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(indexHtml, "text/html");
+    const title = doc.querySelector("title");
+    const body = doc.body;
+    const sceneList = doc.querySelector("#sceneList .scenes");
+
+    if (title) {
+      title.textContent = tourData.name || "Untitled Project";
+    }
+
+    if (body) {
+      body.classList.toggle("multiple-scenes", tourData.scenes.length > 1);
+      body.classList.toggle("single-scene", tourData.scenes.length <= 1);
+    }
+
+    if (sceneList) {
+      sceneList.innerHTML = buildSceneListHtml(tourData.scenes);
+    }
+
+    return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+  }
+
+  function sanitizeFileName(name) {
+    return (name || "tour")
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase();
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    const parts = dataUrl.split(",");
+    const meta = parts[0].match(/data:([^;]+);base64/);
+    const mimeType = meta ? meta[1] : "application/octet-stream";
+    const binary = atob(parts[1]);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new Blob([bytes], { type: mimeType });
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Failed to load panorama image"));
+      image.src = src;
+    });
+  }
+
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Failed to encode tile image"));
+          }
+        },
+        type,
+        quality
+      );
+    });
+  }
+
+  function createExportLevels(faceSize) {
+    const levels = [{ tileSize: 256, size: 256, fallbackOnly: true }];
+    let size = 512;
+
+    while (size < faceSize) {
+      levels.push({ tileSize: 512, size: size });
+      size *= 2;
+    }
+
+    levels.push({ tileSize: 512, size: faceSize });
+    return levels;
+  }
+
+  function getFaceVector(face, nx, ny) {
+    switch (face) {
+      case "f":
+        return [nx, -ny, 1];
+      case "b":
+        return [-nx, -ny, -1];
+      case "l":
+        return [-1, -ny, nx];
+      case "r":
+        return [1, -ny, -nx];
+      case "u":
+        return [nx, 1, ny];
+      case "d":
+        return [nx, -1, -ny];
+      default:
+        throw new Error(`Unknown cube face: ${face}`);
+    }
+  }
+
+  function sampleBilinearPixel(source, width, height, x, y) {
+    const wrappedX = ((x % width) + width) % width;
+    const clampedY = Math.max(0, Math.min(height - 1, y));
+    const x0 = Math.floor(wrappedX);
+    const y0 = Math.floor(clampedY);
+    const x1 = (x0 + 1) % width;
+    const y1 = Math.min(y0 + 1, height - 1);
+    const dx = wrappedX - x0;
+    const dy = clampedY - y0;
+
+    const i00 = (y0 * width + x0) * 4;
+    const i10 = (y0 * width + x1) * 4;
+    const i01 = (y1 * width + x0) * 4;
+    const i11 = (y1 * width + x1) * 4;
+
+    const pixel = [0, 0, 0, 0];
+    for (let c = 0; c < 4; c++) {
+      const top = source[i00 + c] * (1 - dx) + source[i10 + c] * dx;
+      const bottom = source[i01 + c] * (1 - dx) + source[i11 + c] * dx;
+      pixel[c] = top * (1 - dy) + bottom * dy;
+    }
+
+    return pixel;
+  }
+
+  function renderCubeFace(sourceData, sourceWidth, sourceHeight, face, faceSize) {
+    const canvas = document.createElement("canvas");
+    canvas.width = faceSize;
+    canvas.height = faceSize;
+
+    const ctx = canvas.getContext("2d");
+    const imageData = ctx.createImageData(faceSize, faceSize);
+    const dest = imageData.data;
+
+    for (let y = 0; y < faceSize; y++) {
+      const ny = (2 * (y + 0.5)) / faceSize - 1;
+
+      for (let x = 0; x < faceSize; x++) {
+        const nx = (2 * (x + 0.5)) / faceSize - 1;
+        const vector = getFaceVector(face, nx, ny);
+        const length = Math.hypot(vector[0], vector[1], vector[2]);
+        const dx = vector[0] / length;
+        const dy = vector[1] / length;
+        const dz = vector[2] / length;
+
+        const longitude = Math.atan2(dx, dz);
+        const latitude = Math.asin(dy);
+        const sampleX =
+          ((longitude / (2 * Math.PI) + 0.5) * sourceWidth) % sourceWidth;
+        const sampleY = (0.5 - latitude / Math.PI) * sourceHeight;
+        const pixel = sampleBilinearPixel(
+          sourceData,
+          sourceWidth,
+          sourceHeight,
+          sampleX,
+          sampleY
+        );
+
+        const offset = (y * faceSize + x) * 4;
+        dest[offset] = pixel[0];
+        dest[offset + 1] = pixel[1];
+        dest[offset + 2] = pixel[2];
+        dest[offset + 3] = pixel[3];
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+  }
+
+  async function addCanvasTilesToZip(
+    zip,
+    tilesPrefix,
+    sceneId,
+    levelIndex,
+    face,
+    faceCanvas
+  ) {
+    const tileSize = 512;
+    const rows = Math.ceil(faceCanvas.height / tileSize);
+    const cols = Math.ceil(faceCanvas.width / tileSize);
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const tileCanvas = document.createElement("canvas");
+        tileCanvas.width = tileSize;
+        tileCanvas.height = tileSize;
+
+        const tileCtx = tileCanvas.getContext("2d");
+        tileCtx.fillStyle = "#000";
+        tileCtx.fillRect(0, 0, tileSize, tileSize);
+        tileCtx.drawImage(
+          faceCanvas,
+          x * tileSize,
+          y * tileSize,
+          tileSize,
+          tileSize,
+          0,
+          0,
+          tileSize,
+          tileSize
+        );
+
+        const tileBlob = await canvasToBlob(tileCanvas, "image/jpeg", 0.9);
+        zip.file(
+          `${tilesPrefix}${sceneId}/${levelIndex}/${face}/${y}/${x}.jpg`,
+          tileBlob
+        );
+      }
+    }
+  }
+
+  async function exportEquirectScene(zip, tilesPrefix, scene, imageUrl) {
+    const image = await loadImage(imageUrl);
+    const sourceCanvas = document.createElement("canvas");
+    sourceCanvas.width = image.naturalWidth;
+    sourceCanvas.height = image.naturalHeight;
+
+    const sourceCtx = sourceCanvas.getContext("2d");
+    sourceCtx.drawImage(image, 0, 0);
+
+    const sourceImageData = sourceCtx.getImageData(
+      0,
+      0,
+      sourceCanvas.width,
+      sourceCanvas.height
+    );
+    const maxFaceSize = Math.max(
+      512,
+      Math.min(
+        4096,
+        Math.pow(
+          2,
+          Math.floor(Math.log2(Math.max(512, image.naturalWidth / 4)))
+        )
+      )
+    );
+    const exportLevels = createExportLevels(maxFaceSize);
+    const faceOrder = ["f", "b", "l", "r", "u", "d"];
+
+    for (let i = 1; i < exportLevels.length; i++) {
+      const level = exportLevels[i];
+
+      for (const face of faceOrder) {
+        const faceCanvas = renderCubeFace(
+          sourceImageData.data,
+          sourceCanvas.width,
+          sourceCanvas.height,
+          face,
+          level.size
+        );
+        await addCanvasTilesToZip(
+          zip,
+          tilesPrefix,
+          scene.id,
+          i,
+          face,
+          faceCanvas
+        );
+      }
+    }
+
+    return {
+      id: scene.id,
+      name: scene.name,
+      levels: exportLevels,
+      faceSize: maxFaceSize,
+      initialViewParameters: scene.initialViewParameters,
+      linkHotspots: scene.linkHotspots || [],
+      infoHotspots: scene.infoHotspots || [],
+    };
+  }
+
+  async function addExistingTilesToZip(zip, tilesPrefix, sceneId, imageData) {
+    const tileEntries = Object.entries(imageData.tiles || {});
+
+    for (const [tileKey, dataUrl] of tileEntries) {
+      const parts = tileKey.split("/");
+      if (parts.length !== 4) {
+        continue;
+      }
+
+      const [level, face, y, x] = parts;
+      zip.file(
+        `${tilesPrefix}${sceneId}/${level}/${face}/${y}/${x}.jpg`,
+        dataUrlToBlob(dataUrl)
+      );
+    }
+  }
+
+  async function buildExportArchive() {
+    const zip = new JSZip();
+    const exportedScenes = [];
+    const archiveConfig = state.importedArchive || {
+      dataFilePath: "data.js",
+      tilesPrefix: "tiles/",
+      preservedFiles: {},
+    };
+
+    Object.entries(archiveConfig.preservedFiles).forEach(([path, content]) => {
+      zip.file(path, content);
+    });
+
+    for (const scene of state.tourData.scenes) {
+      const imageData = state.sceneImages[scene.id];
+      if (!imageData) {
+        throw new Error(`Missing image data for scene "${scene.name}"`);
+      }
+
+      if (typeof imageData === "string") {
+        exportedScenes.push(
+          await exportEquirectScene(
+            zip,
+            archiveConfig.tilesPrefix,
+            scene,
+            imageData
+          )
+        );
+      } else if (imageData.tiles) {
+        await addExistingTilesToZip(
+          zip,
+          archiveConfig.tilesPrefix,
+          scene.id,
+          imageData
+        );
+        exportedScenes.push({
+          id: scene.id,
+          name: scene.name,
+          levels: scene.levels,
+          faceSize: scene.faceSize,
+          initialViewParameters: scene.initialViewParameters,
+          linkHotspots: scene.linkHotspots || [],
+          infoHotspots: scene.infoHotspots || [],
+        });
+      } else {
+        throw new Error(`Unsupported image data format for scene "${scene.name}"`);
+      }
+    }
+
+    const exportData = {
+      name: state.tourData.name,
+      scenes: exportedScenes,
+      settings: state.tourData.settings,
+    };
+    const dataContent = `var APP_DATA = ${JSON.stringify(exportData, null, 2)};`;
+    const dataDirParts = archiveConfig.dataFilePath.split("/");
+    dataDirParts.pop();
+    const indexHtmlPath = dataDirParts.length
+      ? `${dataDirParts.join("/")}/index.html`
+      : "index.html";
+
+    zip.file(archiveConfig.dataFilePath, dataContent);
+    if (archiveConfig.preservedFiles[indexHtmlPath]) {
+      const decoder = new TextDecoder();
+      const sourceHtml = decoder.decode(archiveConfig.preservedFiles[indexHtmlPath]);
+      zip.file(indexHtmlPath, updateExportedIndexHtml(sourceHtml, exportData));
+    }
+    return zip.generateAsync({ type: "blob" });
+  }
+
   // Export Tour
-  function exportTour() {
+  async function exportTour() {
     if (state.tourData.scenes.length === 0) {
       alert("Please add at least one panorama before exporting");
       return;
@@ -2028,40 +2449,33 @@
     elements.exportProgress.style.width = "0%";
     elements.exportStatus.textContent = "Preparing export...";
 
-    setTimeout(() => {
-      elements.exportProgress.style.width = "50%";
-      elements.exportStatus.textContent = "Generating data file...";
+    try {
+      elements.exportProgress.style.width = "30%";
+      elements.exportStatus.textContent = "Generating tiles and archive...";
 
-      // Create tour data as JavaScript file
-      const dataContent = `var APP_DATA = ${JSON.stringify(
-        state.tourData,
-        null,
-        2
-      )};`;
+      const blob = await buildExportArchive();
 
+      elements.exportProgress.style.width = "100%";
+      elements.exportStatus.textContent = "Download starting...";
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${sanitizeFileName(state.tourData.name) || "tour"}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      markAsSaved();
       setTimeout(() => {
-        elements.exportProgress.style.width = "100%";
-        elements.exportStatus.textContent = "Download starting...";
-
-        // Create blob and download
-        const blob = new Blob([dataContent], {
-          type: "application/javascript",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "data.js";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        markAsSaved(); // Export resets unsaved changes
-        setTimeout(() => {
-          hideModal("exportModal");
-        }, 1000);
-      }, 300);
-    }, 300);
+        hideModal("exportModal");
+      }, 1000);
+    } catch (error) {
+      console.error("Export error:", error);
+      alert("Failed to export tour: " + error.message);
+      hideModal("exportModal");
+    }
   }
 
   // Toggle Help
