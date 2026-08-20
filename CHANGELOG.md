@@ -5,6 +5,17 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-08-20
+
+### Added & Refactored
+
+- **Panorama Title Bar Customization (`panorama-name`)**:
+  - Added dedicated styling options for the scene title bar (`Title Bg` / `themeSceneTitleBgColor`, `Title Font` / `themeSceneTitleFontColor`, `Title Font Size` / `themeSceneTitleFontSize`).
+- **User-Friendly Grouped UI/UX Customization Panel**:
+  - Re-organized UI/UX settings into 4 clean, structured sections (Visibility & Overlay Position, Panorama Title Bar, Active Scene Item, Global Theme & Metrics).
+- **Overlapping UI Fix**:
+  - Resolved all element overlapping issues between Brand Logo, Scene Title Bar, Scene List Overlay, Fullscreen Button, and Control Overlay Pad across both live preview editor and exported webserver packages.
+
 ## [1.3.2] - 2026-08-20
 
 ### Added

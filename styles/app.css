@@ -508,16 +508,23 @@ textarea {
   font-weight: 600;
 }
 
-/* Panorama Name */
+/* Panorama Name Title Bar */
 .panorama-name {
   display: flex;
-  height: 40px;
-  line-height: 40px;
-  padding: 0 10px;
-  background-color: #f6f6f6;
-  border-radius: 5px 5px 0 0;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  background-color: var(--theme-scene-title-bg, #000000);
+  color: var(--theme-scene-title-font, #ffffff);
+  font-size: var(--theme-scene-title-size, 16px);
+  border-radius: var(--theme-border-radius, 8px);
   font-weight: 600;
   cursor: default;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  word-break: break-word;
 }
 
 /* Preview Area */

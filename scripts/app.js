@@ -101,6 +101,9 @@
 
     showHeaderToggle: document.getElementById("showHeaderToggle"),
     showSceneTitleToggle: document.getElementById("showSceneTitleToggle"),
+    themeSceneTitleBgColor: document.getElementById("themeSceneTitleBgColor"),
+    themeSceneTitleFontColor: document.getElementById("themeSceneTitleFontColor"),
+    themeSceneTitleFontSize: document.getElementById("themeSceneTitleFontSize"),
     themeBgColor: document.getElementById("themeBgColor"),
     themeFontColor: document.getElementById("themeFontColor"),
     themeActiveBgColor: document.getElementById("themeActiveBgColor"),
@@ -451,6 +454,9 @@
     // UI/UX Styling Settings
     if (elements.showHeaderToggle) elements.showHeaderToggle.addEventListener("change", updateSettings);
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.addEventListener("change", updateSettings);
+    if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.addEventListener("input", updateSettings);
+    if (elements.themeSceneTitleFontColor) elements.themeSceneTitleFontColor.addEventListener("input", updateSettings);
+    if (elements.themeSceneTitleFontSize) elements.themeSceneTitleFontSize.addEventListener("input", updateSettings);
     if (elements.themeBgColor) elements.themeBgColor.addEventListener("input", updateSettings);
     if (elements.themeFontColor) elements.themeFontColor.addEventListener("input", updateSettings);
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.addEventListener("input", updateSettings);
@@ -733,6 +739,9 @@
     // Synchronize UI form inputs
     if (elements.showHeaderToggle) elements.showHeaderToggle.checked = settings.showHeader !== false;
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.checked = settings.showSceneTitle !== false;
+    if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.value = settings.themeSceneTitleBgColor || "#000000";
+    if (elements.themeSceneTitleFontColor) elements.themeSceneTitleFontColor.value = settings.themeSceneTitleFontColor || "#ffffff";
+    if (elements.themeSceneTitleFontSize) elements.themeSceneTitleFontSize.value = settings.themeSceneTitleFontSize || 16;
     if (elements.themeBgColor) elements.themeBgColor.value = settings.themeBgColor || "#000000";
     if (elements.themeFontColor) elements.themeFontColor.value = settings.themeFontColor || "#ffffff";
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.value = settings.themeActiveBgColor || "#2ba9df";
@@ -745,6 +754,9 @@
 
     // Set Root CSS Custom Variables Live
     const root = document.documentElement;
+    root.style.setProperty("--theme-scene-title-bg", settings.themeSceneTitleBgColor || "#000000");
+    root.style.setProperty("--theme-scene-title-font", settings.themeSceneTitleFontColor || "#ffffff");
+    root.style.setProperty("--theme-scene-title-size", (settings.themeSceneTitleFontSize || 16) + "px");
     root.style.setProperty("--theme-bg-color", settings.themeBgColor || "#000000");
     root.style.setProperty("--theme-font-color", settings.themeFontColor || "#ffffff");
     root.style.setProperty("--theme-active-color", settings.themeActiveBgColor || "#2ba9df");
@@ -817,11 +829,12 @@
       }
     }
 
-    // 5. Header & Scene Title Visibility & Font Styling
+    // 5. Header & Scene Title Visibility & Custom Styling (panorama-name)
     if (elements.panoramaName) {
-      elements.panoramaName.style.display = settings.showSceneTitle !== false ? "block" : "none";
-      elements.panoramaName.style.color = settings.themeFontColor || "#ffffff";
-      elements.panoramaName.style.fontSize = (settings.themeFontSize ? settings.themeFontSize + 2 : 16) + "px";
+      elements.panoramaName.style.display = settings.showSceneTitle !== false ? "flex" : "none";
+      elements.panoramaName.style.backgroundColor = settings.themeSceneTitleBgColor || "#000000";
+      elements.panoramaName.style.color = settings.themeSceneTitleFontColor || "#ffffff";
+      elements.panoramaName.style.fontSize = (settings.themeSceneTitleFontSize || 16) + "px";
     }
 
     // 6. Brand Logo Overlay
@@ -2254,8 +2267,12 @@
       viewControlButtons: elements.viewControlButtons.checked,
       showHeader: elements.showHeaderToggle ? elements.showHeaderToggle.checked : true,
       showSceneTitle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
+      themeSceneTitleBgColor: elements.themeSceneTitleBgColor ? elements.themeSceneTitleBgColor.value : "#000000",
+      themeSceneTitleFontColor: elements.themeSceneTitleFontColor ? elements.themeSceneTitleFontColor.value : "#ffffff",
+      themeSceneTitleFontSize: elements.themeSceneTitleFontSize ? parseInt(elements.themeSceneTitleFontSize.value, 10) || 16 : 16,
       themeBgColor: elements.themeBgColor ? elements.themeBgColor.value : "#000000",
       themeFontColor: elements.themeFontColor ? elements.themeFontColor.value : "#ffffff",
+      themeActiveBgColor: elements.themeActiveBgColor ? elements.themeActiveBgColor.value : "#2ba9df",
       themeActiveItemBg: elements.themeActiveItemBg ? elements.themeActiveItemBg.value : "#2ba9df",
       themeActiveItemFontColor: elements.themeActiveItemFontColor ? elements.themeActiveItemFontColor.value : "#ffffff",
       themeFontSize: elements.themeFontSize ? parseInt(elements.themeFontSize.value, 10) || 14 : 14,
@@ -3306,6 +3323,16 @@
     if (settings.themeBorderRadius !== undefined) viewControlOverlay.style.borderRadius = settings.themeBorderRadius + "px";
     if (settings.themePadding !== undefined) viewControlOverlay.style.padding = settings.themePadding + "px";
     if (settings.themeBgColor) viewControlOverlay.style.backgroundColor = settings.themeBgColor + "cc";
+  }
+
+  var headerTitleBar = document.getElementById("headerTitleBar");
+  if (headerTitleBar) {
+    if (settings.themeSceneTitleBgColor) headerTitleBar.style.backgroundColor = settings.themeSceneTitleBgColor;
+    if (settings.themeSceneTitleFontColor) headerTitleBar.style.color = settings.themeSceneTitleFontColor;
+    if (settings.themeSceneTitleFontSize !== undefined) {
+      var sceneTitle = document.getElementById("sceneTitle");
+      if (sceneTitle) sceneTitle.style.fontSize = settings.themeSceneTitleFontSize + "px";
+    }
   }
 
   if (sceneListContainer) {
