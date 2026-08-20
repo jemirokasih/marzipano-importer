@@ -3296,6 +3296,7 @@
 
   var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
   var activeSceneObj = null;
+  var scenesById = {};
 
   var scenes = APP_DATA.scenes.map(function (data) {
     var urlPrefix = "tiles";
@@ -3310,8 +3311,7 @@
 
     var limiter = Marzipano.RectilinearView.limit.traditional(
       data.faceSize || 4096,
-      (100 * Math.PI) / 180,
-      (120 * Math.PI) / 180
+      (100 * Math.PI) / 180
     );
     var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
     var scene = viewer.createScene({
@@ -3331,7 +3331,9 @@
       scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
     });
 
-    return { data: data, scene: scene, view: view };
+    var sceneObj = { data: data, scene: scene, view: view };
+    scenesById[data.id] = sceneObj;
+    return sceneObj;
   });
 
   function createLinkHotspotElement(hotspot) {

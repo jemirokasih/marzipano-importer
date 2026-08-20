@@ -5,6 +5,17 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.3] - 2026-08-20
+
+### Critical Export Runtime Fixes
+
+- **Fix Link Hotspot Navigation (`scenesById` mapping)**:
+  - Added `scenesById[data.id] = sceneObj` mapping inside `APP_DATA.scenes.map()` in exported `index.js`.
+  - Link hotspots now resolve target scenes correctly (`findSceneById()`) and trigger smooth 3D panorama transitions on click.
+- **Fix Zoom In & Zoom Out Controls (`minFov` Limiter Fix)**:
+  - Removed faulty `minFov` parameter `(120 * Math.PI) / 180` in `Marzipano.RectilinearView.limit.traditional()` which previously locked FOV and blocked zoom controls.
+  - Zoom In (`+`) and Zoom Out (`-`) buttons now operate smoothly across exported tours.
+
 ## [1.8.2] - 2026-08-20
 
 ### Fix & Verification of Exported Package
