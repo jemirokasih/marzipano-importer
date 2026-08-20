@@ -78,6 +78,7 @@
     infoHotspotModal: document.getElementById("infoHotspotModal"),
     infoHotspotTitle: document.getElementById("infoHotspotTitle"),
     infoHotspotText: document.getElementById("infoHotspotText"),
+    infoHotspotLinkUrl: document.getElementById("infoHotspotLinkUrl"),
     saveInfoHotspotButton: document.getElementById("saveInfoHotspotButton"),
     cancelInfoHotspotButton: document.getElementById("cancelInfoHotspotButton"),
 
@@ -91,6 +92,16 @@
     targetViewStatus: document.getElementById("targetViewStatus"),
     saveLinkHotspotButton: document.getElementById("saveLinkHotspotButton"),
     cancelLinkHotspotButton: document.getElementById("cancelLinkHotspotButton"),
+
+    logoFileInput: document.getElementById("logoFileInput"),
+    uploadLogoBtn: document.getElementById("uploadLogoBtn"),
+    removeLogoBtn: document.getElementById("removeLogoBtn"),
+    brandLogoOverlay: document.getElementById("brandLogoOverlay"),
+    brandLogoImg: document.getElementById("brandLogoImg"),
+
+    toggleSceneListBtn: document.getElementById("toggleSceneListBtn"),
+    sceneListPreviewContainer: document.getElementById("sceneListPreviewContainer"),
+    sceneListPreviewUl: document.getElementById("sceneListPreviewUl"),
 
     exportModal: document.getElementById("exportModal"),
     exportProgress: document.getElementById("exportProgress"),
@@ -425,6 +436,28 @@
     elements.viewControlButtons.addEventListener("change", updateSettings);
     elements.fullscreenButton.addEventListener("change", updateSettings);
 
+    // Logo upload handlers
+    if (elements.uploadLogoBtn) {
+      elements.uploadLogoBtn.addEventListener("click", () => {
+        if (elements.logoFileInput) elements.logoFileInput.click();
+      });
+    }
+    if (elements.logoFileInput) {
+      elements.logoFileInput.addEventListener("change", handleLogoUpload);
+    }
+    if (elements.removeLogoBtn) {
+      elements.removeLogoBtn.addEventListener("click", handleRemoveLogo);
+    }
+
+    // Scene list sidebar toggle handler
+    if (elements.toggleSceneListBtn) {
+      elements.toggleSceneListBtn.addEventListener("click", () => {
+        if (elements.sceneListPreviewContainer) {
+          elements.sceneListPreviewContainer.classList.toggle("collapsed");
+        }
+      });
+    }
+
     // Add panoramas
     elements.addPanoramasInput.addEventListener("change", handleAddPanoramas);
 
@@ -716,11 +749,45 @@
       viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
     }
 
-    // 4. Fullscreen Button Overlay
-    const fullscreenOverlay = document.getElementById("fullscreenButtonOverlay");
-    if (fullscreenOverlay) {
-      fullscreenOverlay.style.display = settings.fullscreenButton ? "flex" : "none";
+    // 5. Brand Logo Overlay
+    const logoUrl = settings.logoUrl;
+    if (elements.brandLogoOverlay && elements.brandLogoImg) {
+      if (logoUrl) {
+        elements.brandLogoImg.src = logoUrl;
+        elements.brandLogoOverlay.style.display = "block";
+        if (elements.removeLogoBtn) elements.removeLogoBtn.style.display = "inline-block";
+      } else {
+        elements.brandLogoOverlay.style.display = "none";
+        elements.brandLogoImg.src = "";
+        if (elements.removeLogoBtn) elements.removeLogoBtn.style.display = "none";
+      }
     }
+  }
+
+  function handleLogoUpload(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      const dataUrl = evt.target.result;
+      if (!state.tourData.settings) state.tourData.settings = {};
+      state.tourData.settings.logoUrl = dataUrl;
+      applySettingsToViewer();
+      saveHistoryState();
+      markAsChanged();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  function handleRemoveLogo() {
+    if (state.tourData.settings) {
+      delete state.tourData.settings.logoUrl;
+    }
+    applySettingsToViewer();
+    saveHistoryState();
+    markAsChanged();
   }
 
   // Update UI
@@ -744,11 +811,21 @@
     }
   }
 
+  function toggleSceneListVisibility(index, isChecked) {
+    if (state.tourData.scenes[index]) {
+      state.tourData.scenes[index].showInSceneList = isChecked;
+      renderPanoramaList();
+      saveHistoryState();
+      markAsChanged();
+    }
+  }
+
   // Render Panorama List
   function renderPanoramaList() {
     elements.panoramaList.innerHTML = "";
 
     state.tourData.scenes.forEach((scene, index) => {
+      const showInList = scene.showInSceneList !== false;
       const panoramaEl = document.createElement("div");
       panoramaEl.className =
         "panorama" + (index === state.currentSceneIndex ? " selected" : "");
@@ -775,13 +852,11 @@
               </svg>
             </div>
           </div>
-          <div class="status">
-            <div class="state">
-              <svg class="icon" viewBox="0 0 24 24">
-                <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z"/>
-              </svg>
-              <div class="message">Successfully processed</div>
-            </div>
+          <div class="status" style="margin-top: 4px;">
+            <label style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 4px; cursor: pointer;" onclick="event.stopPropagation();">
+              <input type="checkbox" ${showInList ? "checked" : ""} onchange="event.stopPropagation(); toggleSceneListVisibility(${index}, this.checked)" />
+              <span>Tampilkan di Scene List</span>
+            </label>
           </div>
         </div>
       `;
@@ -791,6 +866,25 @@
 
       elements.panoramaList.appendChild(panoramaEl);
     });
+
+    // Render Floating Scene List Preview Overlay
+    if (elements.sceneListPreviewUl) {
+      elements.sceneListPreviewUl.innerHTML = "";
+      state.tourData.scenes.forEach((scene, index) => {
+        if (scene.showInSceneList !== false) {
+          const li = document.createElement("li");
+          li.textContent = scene.name;
+          if (index === state.currentSceneIndex) {
+            li.classList.add("active");
+          }
+          li.onclick = (e) => {
+            e.stopPropagation();
+            selectScene(index);
+          };
+          elements.sceneListPreviewUl.appendChild(li);
+        }
+      });
+    }
   }
 
   // Setup Drag and Drop for Panorama List
@@ -1665,6 +1759,16 @@
     text.appendChild(header);
     text.appendChild(textContent);
 
+    if (hotspot.linkUrl) {
+      const linkEl = document.createElement("a");
+      linkEl.href = hotspot.linkUrl;
+      linkEl.target = "_blank";
+      linkEl.className = "info-hotspot-link";
+      linkEl.textContent = "Buka Tautan ↗";
+      linkEl.onclick = (e) => e.stopPropagation();
+      text.appendChild(linkEl);
+    }
+
     wrapper.appendChild(iconWrapper);
     wrapper.appendChild(bridge);
     wrapper.appendChild(menu);
@@ -2115,6 +2219,7 @@
   function saveInfoHotspot() {
     const title = elements.infoHotspotTitle.value.trim();
     const text = elements.infoHotspotText.value.trim();
+    const linkUrl = elements.infoHotspotLinkUrl ? elements.infoHotspotLinkUrl.value.trim() : "";
 
     if (!title) {
       alert("Please enter a title");
@@ -2129,6 +2234,7 @@
       if (existingHotspot) {
         existingHotspot.title = title;
         existingHotspot.text = text;
+        existingHotspot.linkUrl = linkUrl;
       }
       markAsChanged();
     } else {
@@ -2138,6 +2244,7 @@
         pitch: state.pendingHotspot.pitch,
         title: title,
         text: text,
+        linkUrl: linkUrl,
       };
       if (!state.currentScene.infoHotspots) {
         state.currentScene.infoHotspots = [];
@@ -2149,6 +2256,7 @@
     // Clear form and reset pending hotspot
     elements.infoHotspotTitle.value = "";
     elements.infoHotspotText.value = "";
+    if (elements.infoHotspotLinkUrl) elements.infoHotspotLinkUrl.value = "";
     state.pendingHotspot = null;
 
     // Reset modal title
@@ -2786,12 +2894,17 @@
 
 <div id="pano"></div>
 
-<div id="titleBar">
-  <h1 class="sceneName">${tourName}</h1>
+<div id="brandLogoContainer" class="brand-logo-container">
+  <img id="brandLogo" src="app-files/logo.png" style="display: none;" onerror="this.style.display='none'">
 </div>
 
-<div id="sceneList">
-  <ul class="scenes"></ul>
+<div id="sceneListOverlay" class="scene-list-overlay">
+  <button type="button" id="toggleSceneListBtn" class="scene-list-toggle-btn" title="Toggle Scene List">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/></svg>
+  </button>
+  <div id="sceneListContainer" class="scene-list-container">
+    <ul id="sceneListUl" class="scenes"></ul>
+  </div>
 </div>
 
 <div id="viewControlOverlay" class="view-controls">
@@ -2835,6 +2948,11 @@
   var panoElement = document.querySelector("#pano");
   var settings = APP_DATA.settings || {};
 
+  if (settings.logoUrl) {
+    var logoImg = document.getElementById("brandLogo");
+    if (logoImg) logoImg.style.display = "block";
+  }
+
   var viewerOpts = {
     controls: {
       mouseViewMode: settings.mouseViewMode || "drag"
@@ -2842,6 +2960,7 @@
   };
 
   var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
+  var activeSceneObj = null;
 
   var scenes = APP_DATA.scenes.map(function (data) {
     var urlPrefix = "tiles";
@@ -2890,7 +3009,8 @@
       '<path d="M16 4 L28 16 L16 28 M28 16 L4 16" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
       '</svg></div>';
     
-    wrapper.addEventListener("click", function () {
+    wrapper.addEventListener("click", function (e) {
+      e.stopPropagation();
       var targetScene = findSceneById(hotspot.target);
       if (targetScene) {
         switchScene(targetScene, hotspot.targetView);
@@ -2902,8 +3022,18 @@
   function createInfoHotspotElement(hotspot) {
     var wrapper = document.createElement("div");
     wrapper.className = "hotspot info-hotspot";
-    wrapper.innerHTML = '<div class="info-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 12,22A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/></svg></div>' +
-      '<div class="info-text"><h3>' + (hotspot.title || "") + '</h3><p>' + (hotspot.text || "") + '</p></div>';
+    var html = '<div class="info-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/></svg></div>' +
+      '<div class="info-text"><h3>' + (hotspot.title || "") + '</h3><p>' + (hotspot.text || "") + '</p>';
+    if (hotspot.linkUrl) {
+      html += '<a href="' + hotspot.linkUrl + '" target="_blank" class="info-hotspot-link" onclick="event.stopPropagation();">Buka Tautan ↗</a>';
+    }
+    html += '</div>';
+    wrapper.innerHTML = html;
+
+    wrapper.addEventListener("click", function (e) {
+      e.stopPropagation();
+      wrapper.classList.toggle("visible");
+    });
     return wrapper;
   }
 
@@ -2915,23 +3045,60 @@
   }
 
   function switchScene(targetScene, overrideInitialView) {
+    if (!targetScene) return;
     targetScene.scene.switchTo();
     if (overrideInitialView) {
       targetScene.view.setParameters(overrideInitialView);
     }
-    var titleEl = document.querySelector("#titleBar .sceneName");
-    if (titleEl) titleEl.textContent = targetScene.data.name;
+    activeSceneObj = targetScene;
+    updateSceneListActiveUI(targetScene);
   }
 
-  var sceneListEl = document.querySelector("#sceneList .scenes");
+  function updateSceneListActiveUI(targetScene) {
+    var items = document.querySelectorAll("#sceneListUl li");
+    items.forEach(function(li) {
+      if (li.getAttribute("data-id") === targetScene.data.id) {
+        li.classList.add("active");
+      } else {
+        li.classList.remove("active");
+      }
+    });
+  }
+
+  var sceneListEl = document.querySelector("#sceneListUl");
   if (sceneListEl) {
     scenes.forEach(function (s) {
-      var li = document.createElement("li");
-      li.textContent = s.data.name;
-      li.addEventListener("click", function () {
-        switchScene(s);
-      });
-      sceneListEl.appendChild(li);
+      if (s.data.showInSceneList !== false) {
+        var li = document.createElement("li");
+        li.textContent = s.data.name;
+        li.setAttribute("data-id", s.data.id);
+        li.addEventListener("click", function (e) {
+          e.stopPropagation();
+          switchScene(s);
+        });
+        sceneListEl.appendChild(li);
+      }
+    });
+  }
+
+  var toggleSceneListBtn = document.getElementById("toggleSceneListBtn");
+  var sceneListContainer = document.getElementById("sceneListContainer");
+  if (toggleSceneListBtn && sceneListContainer) {
+    toggleSceneListBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      sceneListContainer.classList.toggle("collapsed");
+    });
+  }
+
+  var btnFullscreen = document.getElementById("btnFullscreen");
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function(){});
+      } else {
+        document.exitFullscreen().catch(function(){});
+      }
     });
   }
 
@@ -2941,14 +3108,61 @@
     viewer.setIdleMovement(3000, autorotate);
   }
 
+  setupExportViewControls();
+
+  function setupExportViewControls() {
+    var movementInterval = null;
+    function stepMove(action) {
+      if (!activeSceneObj || !activeSceneObj.view) return;
+      var view = activeSceneObj.view;
+      var yaw = view.yaw();
+      var pitch = view.pitch();
+      var fov = view.fov();
+
+      switch (action) {
+        case "up": view.setPitch(pitch + 0.05); break;
+        case "down": view.setPitch(pitch - 0.05); break;
+        case "left": view.setYaw(yaw - 0.06); break;
+        case "right": view.setYaw(yaw + 0.06); break;
+        case "zoomIn": view.setFov(fov * 0.85); break;
+        case "zoomOut": view.setFov(fov * 1.18); break;
+      }
+    }
+
+    function startMove(action) {
+      stopMove();
+      stepMove(action);
+      movementInterval = setInterval(function() { stepMove(action); }, 50);
+    }
+
+    function stopMove() {
+      if (movementInterval) { clearInterval(movementInterval); movementInterval = null; }
+    }
+
+    var controls = [
+      { id: "btnUp", action: "up" },
+      { id: "btnDown", action: "down" },
+      { id: "btnLeft", action: "left" },
+      { id: "btnRight", action: "right" },
+      { id: "btnZoomIn", action: "zoomIn" },
+      { id: "btnZoomOut", action: "zoomOut" }
+    ];
+
+    controls.forEach(function(item) {
+      var btn = document.getElementById(item.id);
+      if (!btn) return;
+      btn.addEventListener("mousedown", function(e) { e.preventDefault(); startMove(item.action); });
+      btn.addEventListener("mouseup", stopMove);
+      btn.addEventListener("mouseleave", stopMove);
+      btn.addEventListener("touchstart", function(e) { e.preventDefault(); startMove(item.action); });
+      btn.addEventListener("touchend", stopMove);
+      btn.addEventListener("click", function(e) { e.preventDefault(); stepMove(item.action); });
+    });
+  }
+
   var viewControlOverlay = document.getElementById("viewControlOverlay");
   if (viewControlOverlay) {
     viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
-  }
-
-  var fullscreenOverlay = document.getElementById("fullscreenOverlay");
-  if (fullscreenOverlay) {
-    fullscreenOverlay.style.display = settings.fullscreenButton ? "flex" : "none";
   }
 
   if (scenes.length > 0) {
@@ -2961,18 +3175,36 @@
     return `* { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #000; color: #fff; }
 #pano { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-#titleBar { position: absolute; top: 16px; left: 16px; z-index: 100; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 15px; }
-#sceneList { position: absolute; top: 68px; left: 16px; z-index: 100; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); max-height: 60vh; overflow-y: auto; }
-#sceneList ul { list-style: none; }
-#sceneList li { padding: 8px 12px; cursor: pointer; border-radius: 4px; font-size: 13px; margin-bottom: 4px; background: rgba(255, 255, 255, 0.08); transition: background 0.15s; }
-#sceneList li:hover { background: rgba(43, 169, 223, 0.7); }
+
+.brand-logo-container { position: absolute; top: 16px; left: 16px; z-index: 100; max-width: 180px; max-height: 80px; }
+.brand-logo-container img { max-width: 100%; max-height: 80px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
+
+.scene-list-overlay { position: absolute; top: 70px; left: 16px; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.scene-list-toggle-btn { width: 36px; height: 36px; border: none; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); color: white; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+.scene-list-toggle-btn:hover { background: rgba(43, 169, 223, 0.85); transform: scale(1.05); }
+
+.scene-list-container { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); padding: 8px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); max-height: 55vh; overflow-y: auto; min-width: 180px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); transition: all 0.2s ease; }
+.scene-list-container.collapsed { display: none; }
+.scene-list-container ul { list-style: none; margin: 0; padding: 0; }
+.scene-list-container li { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 13px; margin-bottom: 4px; background: rgba(255, 255, 255, 0.08); transition: background 0.15s ease; white-space: nowrap; }
+.scene-list-container li:hover, .scene-list-container li.active { background: rgba(43, 169, 223, 0.8); }
+
 .hotspot { position: absolute; cursor: pointer; }
-.info-hotspot .info-text { display: none; position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); width: 220px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; color: white; z-index: 100; }
-.info-hotspot:hover .info-text { display: block; }
+.link-hotspot .link-icon { background: rgba(0, 0, 0, 0.55); border-radius: 50%; padding: 6px; border: 2px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; transition: transform 0.2s ease, background 0.2s ease; }
+.link-hotspot:hover .link-icon { background: rgba(43, 169, 223, 0.85); transform: scale(1.1); }
+
+.info-hotspot .info-icon { background: rgba(0, 0, 0, 0.55); border-radius: 50%; padding: 6px; border: 2px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: transform 0.2s ease, background 0.2s ease; }
+.info-hotspot:hover .info-icon { background: rgba(43, 169, 223, 0.85); transform: scale(1.1); }
+.info-hotspot .info-text { display: none; position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); width: 230px; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; color: white; z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.info-hotspot:hover .info-text, .info-hotspot.visible .info-text { display: block; }
 .info-hotspot .info-text h3 { font-size: 14px; margin-bottom: 6px; color: #2ba9df; }
 .info-hotspot .info-text p { font-size: 12px; line-height: 1.4; color: #ddd; }
-.ctrl-btn { width: 34px; height: 34px; border: none; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); color: white; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.info-hotspot-link { display: inline-block; margin-top: 8px; padding: 5px 10px; background: #2ba9df; color: #fff !important; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; }
+.info-hotspot-link:hover { background: #1e87b7; }
+
+.ctrl-btn { width: 34px; height: 34px; border: none; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); color: white; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; user-select: none; }
 .ctrl-btn:hover { background: rgba(43, 169, 223, 0.8); }
+.ctrl-btn:active { background: #2ba9df; transform: scale(0.95); }
 #fullscreenOverlay { position: absolute; top: 16px; right: 16px; z-index: 100; }
 #viewControlOverlay { position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 6px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); padding: 8px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); }
 .dpad { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 34px); gap: 4px; }
@@ -3341,6 +3573,15 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
     zip.file("data.js", dataContent);
     zip.file("app-files/data.js", dataContent);
     zip.file(archiveConfig.dataFilePath, dataContent);
+
+    if (state.tourData.settings && state.tourData.settings.logoUrl) {
+      try {
+        const logoBlob = dataUrlToBlob(state.tourData.settings.logoUrl);
+        zip.file("app-files/logo.png", logoBlob);
+      } catch (e) {
+        console.warn("Could not write logo blob to ZIP:", e);
+      }
+    }
 
     if (archiveConfig.preservedFiles && archiveConfig.preservedFiles[indexHtmlPath]) {
       const decoder = new TextDecoder();
