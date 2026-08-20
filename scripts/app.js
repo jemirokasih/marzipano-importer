@@ -887,14 +887,14 @@
       viewControlOverlay.style.right = pos.includes("right") ? "20px" : "auto";
       viewControlOverlay.style.borderRadius = borderRadius + "px";
       viewControlOverlay.style.padding = padding + "px";
-      viewControlOverlay.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
+      viewControlOverlay.style.backgroundColor = panelBgRgba;
     }
 
     // 4. Navbar (Header Bar) Visibility & Style
     const isNavbarEnabled = settings.showHeader !== false;
     if (elements.topNavbar) {
       elements.topNavbar.style.display = isNavbarEnabled ? "flex" : "none";
-      elements.topNavbar.style.backgroundColor = (settings.themeNavbarBgColor || "#000000") + "e6";
+      elements.topNavbar.style.backgroundColor = navbarRgba;
       elements.topNavbar.style.color = settings.themeFontColor || "#ffffff";
     }
 
@@ -909,7 +909,7 @@
 
     if (isFsEnabled && toggleFullscreenBtn) {
       toggleFullscreenBtn.style.borderRadius = borderRadius + "px";
-      toggleFullscreenBtn.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
+      toggleFullscreenBtn.style.backgroundColor = panelBgRgba;
 
       if (fsPos === "navbar" && isNavbarEnabled && elements.navbarFullscreenSlot) {
         toggleFullscreenBtn.style.backgroundColor = "transparent";
@@ -980,7 +980,7 @@
         if (elements.panoramaName) {
           elements.panoramaName.textContent = sceneNameText;
           elements.panoramaName.style.display = "flex";
-          elements.panoramaName.style.backgroundColor = settings.themeSceneTitleBgColor || "transparent";
+          elements.panoramaName.style.backgroundColor = titleBgRgba;
           elements.panoramaName.style.color = settings.themeSceneTitleFontColor || (settings.themeFontColor || "#ffffff");
           elements.panoramaName.style.fontSize = titleFontSize + "px";
           elements.panoramaName.style.borderRadius = borderRadius + "px";
@@ -989,7 +989,7 @@
         elements.floatingTitleOverlay.style.display = "block";
         elements.floatingPanoramaName.textContent = sceneNameText;
         elements.floatingPanoramaName.style.display = "flex";
-        elements.floatingPanoramaName.style.backgroundColor = settings.themeSceneTitleBgColor || "#000000";
+        elements.floatingPanoramaName.style.backgroundColor = titleBgRgba;
         elements.floatingPanoramaName.style.color = settings.themeSceneTitleFontColor || "#ffffff";
         elements.floatingPanoramaName.style.fontSize = titleFontSize + "px";
         elements.floatingPanoramaName.style.borderRadius = borderRadius + "px";
@@ -1010,7 +1010,7 @@
     if (elements.sceneListPreviewContainer) {
       elements.sceneListPreviewContainer.style.borderRadius = borderRadius + "px";
       elements.sceneListPreviewContainer.style.padding = padding + "px";
-      elements.sceneListPreviewContainer.style.backgroundColor = (settings.themeBgColor || "#000000") + "d9";
+      elements.sceneListPreviewContainer.style.backgroundColor = panelBgRgba;
       elements.sceneListPreviewContainer.style.color = settings.themeFontColor || "#ffffff";
       elements.sceneListPreviewContainer.style.fontSize = fontSize + "px";
     }
@@ -3408,17 +3408,21 @@
     if (floatTitleOverlay) floatTitleOverlay.style.display = "none";
 
     if (isTitleEnabled) {
+      var titleBgColor = settings.themeSceneTitleBgColor || "#000000";
+      var titleBgOpacity = settings.themeSceneTitleBgOpacity !== undefined ? settings.themeSceneTitleBgOpacity : 80;
+      var titleBgRgba = hexToRgba(titleBgColor, titleBgOpacity);
+
       if (titlePos === "navbar" && isNavbarEnabled && navTitleSlot && navTitleEl) {
         navTitleEl.textContent = targetScene.data.name;
         navTitleSlot.style.display = "flex";
-        if (settings.themeSceneTitleBgColor) navTitleEl.style.backgroundColor = settings.themeSceneTitleBgColor;
+        navTitleEl.style.backgroundColor = titleBgRgba;
         if (settings.themeSceneTitleFontColor) navTitleEl.style.color = settings.themeSceneTitleFontColor;
         if (settings.themeSceneTitleFontSize !== undefined) navTitleEl.style.fontSize = settings.themeSceneTitleFontSize + "px";
         if (settings.themeBorderRadius !== undefined) navTitleEl.style.borderRadius = settings.themeBorderRadius + "px";
       } else if (floatTitleOverlay && floatTitleEl) {
         floatTitleEl.textContent = targetScene.data.name;
         floatTitleOverlay.style.display = "block";
-        if (settings.themeSceneTitleBgColor) floatTitleEl.style.backgroundColor = settings.themeSceneTitleBgColor;
+        floatTitleEl.style.backgroundColor = titleBgRgba;
         if (settings.themeSceneTitleFontColor) floatTitleEl.style.color = settings.themeSceneTitleFontColor;
         if (settings.themeSceneTitleFontSize !== undefined) floatTitleEl.style.fontSize = settings.themeSceneTitleFontSize + "px";
         if (settings.themeBorderRadius !== undefined) floatTitleEl.style.borderRadius = settings.themeBorderRadius + "px";
@@ -3440,7 +3444,9 @@
     items.forEach(function(li) {
       if (li.getAttribute("data-id") === targetScene.data.id) {
         li.classList.add("active");
-        if (settings.themeActiveItemBg) li.style.backgroundColor = settings.themeActiveItemBg;
+        var activeBg = settings.themeActiveItemBg || "#2ba9df";
+        var activeOpacity = settings.themeActiveItemBgOpacity !== undefined ? settings.themeActiveItemBgOpacity : 100;
+        li.style.backgroundColor = hexToRgba(activeBg, activeOpacity);
         if (settings.themeActiveItemFontColor) li.style.color = settings.themeActiveItemFontColor;
         if (settings.themeActiveItemFontSize !== undefined) li.style.fontSize = settings.themeActiveItemFontSize + "px";
         if (settings.themeActiveItemBorderRadius !== undefined) li.style.borderRadius = settings.themeActiveItemBorderRadius + "px";
@@ -3562,6 +3568,8 @@
     return "rgba(" + r + "," + g + "," + b + "," + a + ")";
   }
 
+  var panelBgRgba = hexToRgba(settings.themeBgColor || "#000000", settings.themeBgOpacity !== undefined ? settings.themeBgOpacity : 85);
+
   var isNavbarEnabled = settings.showHeader !== false;
   var topNavbar = document.getElementById("topNavbar");
   if (topNavbar) {
@@ -3581,7 +3589,7 @@
   if (fullscreenOverlay) fullscreenOverlay.style.display = "none";
   if (isFsEnabled && btnFullscreen) {
     if (settings.themeBorderRadius !== undefined) btnFullscreen.style.borderRadius = settings.themeBorderRadius + "px";
-    if (settings.themeBgColor) btnFullscreen.style.backgroundColor = settings.themeBgColor + "cc";
+    btnFullscreen.style.backgroundColor = panelBgRgba;
 
     if (fsPos === "navbar" && isNavbarEnabled && navbarFullscreenSlot) {
       btnFullscreen.style.backgroundColor = "transparent";
@@ -3636,13 +3644,13 @@
     viewControlOverlay.style.right = pos.indexOf("right") !== -1 ? "20px" : "auto";
     if (settings.themeBorderRadius !== undefined) viewControlOverlay.style.borderRadius = settings.themeBorderRadius + "px";
     if (settings.themePadding !== undefined) viewControlOverlay.style.padding = settings.themePadding + "px";
-    if (settings.themeBgColor) viewControlOverlay.style.backgroundColor = settings.themeBgColor + "cc";
+    viewControlOverlay.style.backgroundColor = panelBgRgba;
   }
 
   if (sceneListContainer) {
     if (settings.themeBorderRadius !== undefined) sceneListContainer.style.borderRadius = settings.themeBorderRadius + "px";
     if (settings.themePadding !== undefined) sceneListContainer.style.padding = settings.themePadding + "px";
-    if (settings.themeBgColor) sceneListContainer.style.backgroundColor = settings.themeBgColor + "d9";
+    sceneListContainer.style.backgroundColor = panelBgRgba;
     if (settings.themeFontColor) sceneListContainer.style.color = settings.themeFontColor;
     if (settings.themeFontSize !== undefined) sceneListContainer.style.fontSize = settings.themeFontSize + "px";
   }
