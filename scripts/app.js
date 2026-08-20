@@ -2879,31 +2879,6 @@
 
     return { data: data, scene: scene, view: view };
   });
-    var limiter = Marzipano.RectilinearView.limit.traditional(
-      data.faceSize || 4096,
-      (100 * Math.PI) / 180,
-      (10 * Math.PI) / 180
-    );
-    var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
-    var scene = viewer.createScene({
-      source: source,
-      geometry: new Marzipano.CubeGeometry(data.levels),
-      view: view,
-      pinFirstLevel: true
-    });
-
-    (data.linkHotspots || []).forEach(function (hotspot) {
-      var element = createLinkHotspotElement(hotspot);
-      scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
-    });
-
-    (data.infoHotspots || []).forEach(function (hotspot) {
-      var element = createInfoHotspotElement(hotspot);
-      scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
-    });
-
-    return { data: data, scene: scene, view: view };
-  });
 
   function createLinkHotspotElement(hotspot) {
     var wrapper = document.createElement("div");
