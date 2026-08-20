@@ -12,3 +12,7 @@
 3. **Pertahankan Histori Commit (Dilarang Hapus History)**:
    - Dilarang keras menghapus, menimpa dengan `force push` (`--force`), atau melakukan squash yang merusak rekam jejak histori commit.
    - Seluruh histori commit harus dijaga keutuhannya agar sewaktu-waktu dapat dilakukan *rollback* (pengembalian ke versi sebelumnya) dengan aman.
+
+4. **Update Versi Footer, CHANGELOG.md & Otomatis Buat GitHub Release**:
+   - Setiap kali menambah fitur baru atau memperbaiki bug, selalu perbarui tag versi (contoh: `v1.2.0`) di footer `index.html` dan catat riwayat perubahannya di `CHANGELOG.md`.
+   - Saat USER meminta push/merge ke `main`, lakukan merge/push dari `dev` ke `main`, buat tag versi git, dan secara otomatis buat GitHub Release (`gh release create vX.Y.Z ...`) dengan catatan rilis yang diambil dari `CHANGELOG.md`.

@@ -5,6 +5,18 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-20
+
+### Added & Fixed (100% Editor to Webserver Export Parity)
+
+- **Hotspot Styling & Backgrounds**: Added circular translucent backdrops, borders, drop shadows, and hover animations for `.link-hotspot` and `.info-hotspot` in exported tours (`style.css`).
+- **Interactive Export View Controls**: Implemented mouse, touch, and click continuous camera movement & multi-step zooming for exported tour D-Pad controls (`#btnUp`, `#btnDown`, `#btnLeft`, `#btnRight`, `#btnZoomIn`, `#btnZoomOut`).
+- **Collapsible Scene List Sidebar**: Integrated a floating `#sceneListOverlay` with `#toggleSceneListBtn` to expand/collapse sidebar in both editor and exported packages.
+- **Scene List Visibility Control (`showInSceneList`)**: Added a checkbox to show/hide individual scenes from the sidebar list.
+- **Info Hotspot Hyperlink Support (`linkUrl`)**: Added URL input in Info Hotspot modal (`https://...`) rendering a styled `<a href="..." target="_blank">Buka Tautan ↗</a>` button.
+- **Custom Brand Logo Upload**: Added brand logo upload support in settings panel, rendering `app-files/logo.png` overlay in viewer and exported tours.
+- **Footer Version Tag & Release Workflow**: Added version badge (`v1.2.0`) in footer and automated GitHub Release creation workflow upon approval to push/merge to `main`.
+
 ## [1.0.0] - 2025-11-07
 
 ### Added
