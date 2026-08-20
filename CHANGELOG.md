@@ -5,6 +5,15 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2026-08-21
+
+### UI & Interaction Fixes
+
+- **Fix Drag vs QTVR Radio Button Selection UI (`#radio-off-icon` & `#radio-on-icon`)**:
+  - Replaced broken SVG path for `#radio-off-icon` so unchecked radio options render as an open ring instead of a solid filled circle.
+  - Removed redundant `for` attributes on wrapper `<label>` tags to prevent double-click event propagation in web browsers.
+  - Updated `.setting-choice .input` CSS rules to use accessible visually-hidden layout (`opacity: 0; position: absolute;`) so radio states update smoothly.
+
 ## [1.8.3] - 2026-08-20
 
 ### Critical Export Runtime Fixes
