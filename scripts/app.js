@@ -2857,7 +2857,7 @@
     var limiter = Marzipano.RectilinearView.limit.traditional(
       data.faceSize || 4096,
       (100 * Math.PI) / 180,
-      (10 * Math.PI) / 180
+      (120 * Math.PI) / 180
     );
     var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
     var scene = viewer.createScene({
