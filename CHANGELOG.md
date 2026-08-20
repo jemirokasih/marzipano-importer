@@ -5,6 +5,14 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-08-20
+
+### Fixed
+
+- **Border Radius & Padding 0 Values Bug**:
+  - Resolved JavaScript falsy check issue where entering `0` for border radius or padding was falling back to `8px`.
+  - Setting `border-radius: 0px` or `padding: 0px` now correctly produces sharp 0px square corners across all overlay containers and scene list items.
+
 ## [1.4.0] - 2026-08-20
 
 ### Added & Refactored
