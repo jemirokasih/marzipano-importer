@@ -215,13 +215,15 @@ textarea {
   display: none;
 }
 
-.accordion-content {
+.accordion-content,
+.accordion-body {
   display: none;
   background-color: #333;
   color: #f6f6f6;
 }
 
-.accordion.expand .accordion-content {
+.accordion.expand .accordion-content,
+.accordion.expand .accordion-body {
   display: block;
 }
 

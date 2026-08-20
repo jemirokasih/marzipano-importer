@@ -102,16 +102,20 @@
     showHeaderToggle: document.getElementById("showHeaderToggle"),
     showSceneTitleToggle: document.getElementById("showSceneTitleToggle"),
     themeNavbarBgColor: document.getElementById("themeNavbarBgColor"),
+    themeNavbarBgOpacity: document.getElementById("themeNavbarBgOpacity"),
     themeFullscreenPos: document.getElementById("themeFullscreenPos"),
     themeLogoPos: document.getElementById("themeLogoPos"),
     themeTitlePos: document.getElementById("themeTitlePos"),
     themeSceneTitleBgColor: document.getElementById("themeSceneTitleBgColor"),
+    themeSceneTitleBgOpacity: document.getElementById("themeSceneTitleBgOpacity"),
     themeSceneTitleFontColor: document.getElementById("themeSceneTitleFontColor"),
     themeSceneTitleFontSize: document.getElementById("themeSceneTitleFontSize"),
     themeBgColor: document.getElementById("themeBgColor"),
+    themeBgOpacity: document.getElementById("themeBgOpacity"),
     themeFontColor: document.getElementById("themeFontColor"),
     themeActiveBgColor: document.getElementById("themeActiveBgColor"),
     themeActiveItemBg: document.getElementById("themeActiveItemBg"),
+    themeActiveItemBgOpacity: document.getElementById("themeActiveItemBgOpacity"),
     themeActiveItemFontColor: document.getElementById("themeActiveItemFontColor"),
     themeActiveItemFontSize: document.getElementById("themeActiveItemFontSize"),
     themeActiveItemBorderRadius: document.getElementById("themeActiveItemBorderRadius"),
@@ -469,16 +473,20 @@
     if (elements.showHeaderToggle) elements.showHeaderToggle.addEventListener("change", updateSettings);
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.addEventListener("change", updateSettings);
     if (elements.themeNavbarBgColor) elements.themeNavbarBgColor.addEventListener("input", updateSettings);
+    if (elements.themeNavbarBgOpacity) elements.themeNavbarBgOpacity.addEventListener("input", updateSettings);
     if (elements.themeFullscreenPos) elements.themeFullscreenPos.addEventListener("change", updateSettings);
     if (elements.themeLogoPos) elements.themeLogoPos.addEventListener("change", updateSettings);
     if (elements.themeTitlePos) elements.themeTitlePos.addEventListener("change", updateSettings);
     if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.addEventListener("input", updateSettings);
+    if (elements.themeSceneTitleBgOpacity) elements.themeSceneTitleBgOpacity.addEventListener("input", updateSettings);
     if (elements.themeSceneTitleFontColor) elements.themeSceneTitleFontColor.addEventListener("input", updateSettings);
     if (elements.themeSceneTitleFontSize) elements.themeSceneTitleFontSize.addEventListener("input", updateSettings);
     if (elements.themeBgColor) elements.themeBgColor.addEventListener("input", updateSettings);
+    if (elements.themeBgOpacity) elements.themeBgOpacity.addEventListener("input", updateSettings);
     if (elements.themeFontColor) elements.themeFontColor.addEventListener("input", updateSettings);
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.addEventListener("input", updateSettings);
     if (elements.themeActiveItemBg) elements.themeActiveItemBg.addEventListener("input", updateSettings);
+    if (elements.themeActiveItemBgOpacity) elements.themeActiveItemBgOpacity.addEventListener("input", updateSettings);
     if (elements.themeActiveItemFontColor) elements.themeActiveItemFontColor.addEventListener("input", updateSettings);
     if (elements.themeActiveItemFontSize) elements.themeActiveItemFontSize.addEventListener("input", updateSettings);
     if (elements.themeActiveItemBorderRadius) elements.themeActiveItemBorderRadius.addEventListener("input", updateSettings);
@@ -734,11 +742,20 @@
 
   let autorotateMovement = null;
 
+  function hexToRgba(hex, opacityPercent) {
+    if (!hex) return "rgba(0,0,0,0.85)";
+    let c = hex.replace("#", "");
+    if (c.length === 3) c = c.split("").map(x => x + x).join("");
+    const r = parseInt(c.substring(0, 2), 16) || 0;
+    const g = parseInt(c.substring(2, 4), 16) || 0;
+    const b = parseInt(c.substring(4, 6), 16) || 0;
+    const a = (opacityPercent !== undefined && opacityPercent !== null && !isNaN(opacityPercent)) ? opacityPercent / 100 : 0.85;
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+
   // Apply settings (mouseViewMode, autorotate) to Marzipano Viewer
   function applySettingsToViewer() {
-    if (!state.tourData || !state.tourData.settings) return;
-
-    const settings = state.tourData.settings;
+    const settings = state.tourData.settings || {};
     const mode = settings.mouseViewMode || "drag";
     const autorotateEnabled = !!settings.autorotateEnabled;
 
@@ -767,19 +784,28 @@
     const activeItemRadius = (settings.themeActiveItemBorderRadius !== undefined && settings.themeActiveItemBorderRadius !== null) ? settings.themeActiveItemBorderRadius : 6;
     const activeItemPadding = (settings.themeActiveItemPadding !== undefined && settings.themeActiveItemPadding !== null) ? settings.themeActiveItemPadding : 8;
 
+    const navBgOpacity = (settings.themeNavbarBgOpacity !== undefined && settings.themeNavbarBgOpacity !== null) ? settings.themeNavbarBgOpacity : 85;
+    const titleBgOpacity = (settings.themeSceneTitleBgOpacity !== undefined && settings.themeSceneTitleBgOpacity !== null) ? settings.themeSceneTitleBgOpacity : 80;
+    const activeItemBgOpacity = (settings.themeActiveItemBgOpacity !== undefined && settings.themeActiveItemBgOpacity !== null) ? settings.themeActiveItemBgOpacity : 100;
+    const panelBgOpacity = (settings.themeBgOpacity !== undefined && settings.themeBgOpacity !== null) ? settings.themeBgOpacity : 85;
+
     if (elements.showHeaderToggle) elements.showHeaderToggle.checked = settings.showHeader !== false;
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.checked = settings.showSceneTitle !== false;
     if (elements.themeNavbarBgColor) elements.themeNavbarBgColor.value = settings.themeNavbarBgColor || "#000000";
+    if (elements.themeNavbarBgOpacity) elements.themeNavbarBgOpacity.value = navBgOpacity;
     if (elements.themeFullscreenPos) elements.themeFullscreenPos.value = settings.themeFullscreenPos || "navbar";
     if (elements.themeLogoPos) elements.themeLogoPos.value = settings.themeLogoPos || "navbar";
     if (elements.themeTitlePos) elements.themeTitlePos.value = settings.themeTitlePos || "navbar";
     if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.value = settings.themeSceneTitleBgColor || "#000000";
+    if (elements.themeSceneTitleBgOpacity) elements.themeSceneTitleBgOpacity.value = titleBgOpacity;
     if (elements.themeSceneTitleFontColor) elements.themeSceneTitleFontColor.value = settings.themeSceneTitleFontColor || "#ffffff";
     if (elements.themeSceneTitleFontSize) elements.themeSceneTitleFontSize.value = titleFontSize;
     if (elements.themeBgColor) elements.themeBgColor.value = settings.themeBgColor || "#000000";
+    if (elements.themeBgOpacity) elements.themeBgOpacity.value = panelBgOpacity;
     if (elements.themeFontColor) elements.themeFontColor.value = settings.themeFontColor || "#ffffff";
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.value = settings.themeActiveBgColor || "#2ba9df";
     if (elements.themeActiveItemBg) elements.themeActiveItemBg.value = settings.themeActiveItemBg || "#2ba9df";
+    if (elements.themeActiveItemBgOpacity) elements.themeActiveItemBgOpacity.value = activeItemBgOpacity;
     if (elements.themeActiveItemFontColor) elements.themeActiveItemFontColor.value = settings.themeActiveItemFontColor || "#ffffff";
     if (elements.themeActiveItemFontSize) elements.themeActiveItemFontSize.value = activeItemFontSize;
     if (elements.themeActiveItemBorderRadius) elements.themeActiveItemBorderRadius.value = activeItemRadius;
@@ -789,16 +815,21 @@
     if (elements.themePadding) elements.themePadding.value = padding;
     if (elements.themeControlPos) elements.themeControlPos.value = settings.themeControlPos || "bottom-right";
 
+    const navbarRgba = hexToRgba(settings.themeNavbarBgColor || "#000000", navBgOpacity);
+    const titleBgRgba = hexToRgba(settings.themeSceneTitleBgColor || "#000000", titleBgOpacity);
+    const activeItemBgRgba = hexToRgba(settings.themeActiveItemBg || "#2ba9df", activeItemBgOpacity);
+    const panelBgRgba = hexToRgba(settings.themeBgColor || "#000000", panelBgOpacity);
+
     // Set Root CSS Custom Variables Live
     const root = document.documentElement;
-    root.style.setProperty("--theme-navbar-bg", (settings.themeNavbarBgColor || "#000000") + "e6");
-    root.style.setProperty("--theme-scene-title-bg", settings.themeSceneTitleBgColor || "#000000");
+    root.style.setProperty("--theme-navbar-bg", navbarRgba);
+    root.style.setProperty("--theme-scene-title-bg", titleBgRgba);
     root.style.setProperty("--theme-scene-title-font", settings.themeSceneTitleFontColor || "#ffffff");
     root.style.setProperty("--theme-scene-title-size", titleFontSize + "px");
-    root.style.setProperty("--theme-bg-color", settings.themeBgColor || "#000000");
+    root.style.setProperty("--theme-bg-color", panelBgRgba);
     root.style.setProperty("--theme-font-color", settings.themeFontColor || "#ffffff");
     root.style.setProperty("--theme-active-color", settings.themeActiveBgColor || "#2ba9df");
-    root.style.setProperty("--theme-active-item-bg", settings.themeActiveItemBg || "#2ba9df");
+    root.style.setProperty("--theme-active-item-bg", activeItemBgRgba);
     root.style.setProperty("--theme-active-item-font-color", settings.themeActiveItemFontColor || "#ffffff");
     root.style.setProperty("--theme-active-item-font-size", activeItemFontSize + "px");
     root.style.setProperty("--theme-active-item-border-radius", activeItemRadius + "px");
@@ -2393,6 +2424,11 @@
     const parsedActiveItemRadius = elements.themeActiveItemBorderRadius ? parseInt(elements.themeActiveItemBorderRadius.value, 10) : NaN;
     const parsedActiveItemPadding = elements.themeActiveItemPadding ? parseInt(elements.themeActiveItemPadding.value, 10) : NaN;
 
+    const parsedNavBgOpacity = elements.themeNavbarBgOpacity ? parseInt(elements.themeNavbarBgOpacity.value, 10) : NaN;
+    const parsedTitleBgOpacity = elements.themeSceneTitleBgOpacity ? parseInt(elements.themeSceneTitleBgOpacity.value, 10) : NaN;
+    const parsedActiveItemBgOpacity = elements.themeActiveItemBgOpacity ? parseInt(elements.themeActiveItemBgOpacity.value, 10) : NaN;
+    const parsedBgOpacity = elements.themeBgOpacity ? parseInt(elements.themeBgOpacity.value, 10) : NaN;
+
     state.tourData.settings = {
       ...state.tourData.settings,
       mouseViewMode: elements.mouseViewModeDrag.checked ? "drag" : "qtvr",
@@ -2400,18 +2436,22 @@
       fullscreenButton: elements.fullscreenButton.checked,
       viewControlButtons: elements.viewControlButtons.checked,
       showHeader: elements.showHeaderToggle ? elements.showHeaderToggle.checked : true,
-      showSceneTitleToggle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
+      showSceneTitle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
       themeNavbarBgColor: elements.themeNavbarBgColor ? elements.themeNavbarBgColor.value : "#000000",
+      themeNavbarBgOpacity: isNaN(parsedNavBgOpacity) ? 85 : parsedNavBgOpacity,
       themeFullscreenPos: elements.themeFullscreenPos ? elements.themeFullscreenPos.value : "navbar",
       themeLogoPos: elements.themeLogoPos ? elements.themeLogoPos.value : "navbar",
       themeTitlePos: elements.themeTitlePos ? elements.themeTitlePos.value : "navbar",
       themeSceneTitleBgColor: elements.themeSceneTitleBgColor ? elements.themeSceneTitleBgColor.value : "#000000",
+      themeSceneTitleBgOpacity: isNaN(parsedTitleBgOpacity) ? 80 : parsedTitleBgOpacity,
       themeSceneTitleFontColor: elements.themeSceneTitleFontColor ? elements.themeSceneTitleFontColor.value : "#ffffff",
       themeSceneTitleFontSize: isNaN(parsedTitleSize) ? 16 : parsedTitleSize,
       themeBgColor: elements.themeBgColor ? elements.themeBgColor.value : "#000000",
+      themeBgOpacity: isNaN(parsedBgOpacity) ? 85 : parsedBgOpacity,
       themeFontColor: elements.themeFontColor ? elements.themeFontColor.value : "#ffffff",
       themeActiveBgColor: elements.themeActiveBgColor ? elements.themeActiveBgColor.value : "#2ba9df",
       themeActiveItemBg: elements.themeActiveItemBg ? elements.themeActiveItemBg.value : "#2ba9df",
+      themeActiveItemBgOpacity: isNaN(parsedActiveItemBgOpacity) ? 100 : parsedActiveItemBgOpacity,
       themeActiveItemFontColor: elements.themeActiveItemFontColor ? elements.themeActiveItemFontColor.value : "#ffffff",
       themeActiveItemFontSize: isNaN(parsedActiveItemFontSize) ? 13 : parsedActiveItemFontSize,
       themeActiveItemBorderRadius: isNaN(parsedActiveItemRadius) ? 6 : parsedActiveItemRadius,
@@ -3511,12 +3551,24 @@
     });
   }
 
+  function hexToRgba(hex, opacityPercent) {
+    if (!hex) return "rgba(0,0,0,0.85)";
+    var c = hex.replace("#", "");
+    if (c.length === 3) c = c.split("").map(function(x) { return x + x; }).join("");
+    var r = parseInt(c.substring(0, 2), 16) || 0;
+    var g = parseInt(c.substring(2, 4), 16) || 0;
+    var b = parseInt(c.substring(4, 6), 16) || 0;
+    var a = (opacityPercent !== undefined && opacityPercent !== null && !isNaN(opacityPercent)) ? opacityPercent / 100 : 0.85;
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+  }
+
   var isNavbarEnabled = settings.showHeader !== false;
   var topNavbar = document.getElementById("topNavbar");
   if (topNavbar) {
     topNavbar.style.display = isNavbarEnabled ? "flex" : "none";
-    var navBg = settings.themeNavbarBgColor || settings.themeBgColor || "#000000";
-    topNavbar.style.backgroundColor = navBg + "e6";
+    var navBgColor = settings.themeNavbarBgColor || settings.themeBgColor || "#000000";
+    var navBgOpacity = settings.themeNavbarBgOpacity !== undefined ? settings.themeNavbarBgOpacity : 85;
+    topNavbar.style.backgroundColor = hexToRgba(navBgColor, navBgOpacity);
     if (settings.themeFontColor) topNavbar.style.color = settings.themeFontColor;
   }
 

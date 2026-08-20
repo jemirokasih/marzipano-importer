@@ -5,6 +5,18 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-08-20
+
+### Fixed & Enhanced
+
+- **UI / UX Customization Accordion Minimize Fix**:
+  - Resolved accordion collapse issue by aligning CSS container classes (`.accordion-content`, `.accordion-body`) so clicking `.ui-ux-accordion` header smoothly minimizes and expands the panel.
+- **Color Opacity / Transparency Controls (% 0 - 100)**:
+  - Added Opacity (%) inputs for Navbar Bg, Title Bg, Active Scene Item Bg, and Panel Bg colors (`themeNavbarBgOpacity`, `themeSceneTitleBgOpacity`, `themeActiveItemBgOpacity`, `themeBgOpacity`).
+  - Integrated `hexToRgba()` converter to render exact alpha transparency and glassmorphism styling across live preview and exported tours.
+- **Tuned UI Layout Hierarchy**:
+  - Cleaned up control groupings, input fields alignment, and label descriptions for maximal usability and clarity.
+
 ## [1.7.0] - 2026-08-20
 
 ### Added & Improved
