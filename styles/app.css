@@ -1459,6 +1459,9 @@ textarea.input-field {
 .scene-list-preview-container li.active {
   background: var(--theme-active-item-bg, #2ba9df) !important;
   color: var(--theme-active-item-font-color, #ffffff) !important;
+  font-size: var(--theme-active-item-font-size, 13px) !important;
+  border-radius: var(--theme-active-item-border-radius, 6px) !important;
+  padding: var(--theme-active-item-padding, 8px 12px) !important;
   font-weight: 600;
 }
 

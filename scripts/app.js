@@ -109,6 +109,9 @@
     themeActiveBgColor: document.getElementById("themeActiveBgColor"),
     themeActiveItemBg: document.getElementById("themeActiveItemBg"),
     themeActiveItemFontColor: document.getElementById("themeActiveItemFontColor"),
+    themeActiveItemFontSize: document.getElementById("themeActiveItemFontSize"),
+    themeActiveItemBorderRadius: document.getElementById("themeActiveItemBorderRadius"),
+    themeActiveItemPadding: document.getElementById("themeActiveItemPadding"),
     themeFontSize: document.getElementById("themeFontSize"),
     themeBorderRadius: document.getElementById("themeBorderRadius"),
     themePadding: document.getElementById("themePadding"),
@@ -462,6 +465,9 @@
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.addEventListener("input", updateSettings);
     if (elements.themeActiveItemBg) elements.themeActiveItemBg.addEventListener("input", updateSettings);
     if (elements.themeActiveItemFontColor) elements.themeActiveItemFontColor.addEventListener("input", updateSettings);
+    if (elements.themeActiveItemFontSize) elements.themeActiveItemFontSize.addEventListener("input", updateSettings);
+    if (elements.themeActiveItemBorderRadius) elements.themeActiveItemBorderRadius.addEventListener("input", updateSettings);
+    if (elements.themeActiveItemPadding) elements.themeActiveItemPadding.addEventListener("input", updateSettings);
     if (elements.themeFontSize) elements.themeFontSize.addEventListener("input", updateSettings);
     if (elements.themeBorderRadius) elements.themeBorderRadius.addEventListener("input", updateSettings);
     if (elements.themePadding) elements.themePadding.addEventListener("input", updateSettings);
@@ -742,6 +748,10 @@
     const fontSize = (settings.themeFontSize !== undefined && settings.themeFontSize !== null) ? settings.themeFontSize : 14;
     const titleFontSize = (settings.themeSceneTitleFontSize !== undefined && settings.themeSceneTitleFontSize !== null) ? settings.themeSceneTitleFontSize : 16;
 
+    const activeItemFontSize = (settings.themeActiveItemFontSize !== undefined && settings.themeActiveItemFontSize !== null) ? settings.themeActiveItemFontSize : 13;
+    const activeItemRadius = (settings.themeActiveItemBorderRadius !== undefined && settings.themeActiveItemBorderRadius !== null) ? settings.themeActiveItemBorderRadius : 6;
+    const activeItemPadding = (settings.themeActiveItemPadding !== undefined && settings.themeActiveItemPadding !== null) ? settings.themeActiveItemPadding : 8;
+
     if (elements.showHeaderToggle) elements.showHeaderToggle.checked = settings.showHeader !== false;
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.checked = settings.showSceneTitle !== false;
     if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.value = settings.themeSceneTitleBgColor || "#000000";
@@ -752,6 +762,9 @@
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.value = settings.themeActiveBgColor || "#2ba9df";
     if (elements.themeActiveItemBg) elements.themeActiveItemBg.value = settings.themeActiveItemBg || "#2ba9df";
     if (elements.themeActiveItemFontColor) elements.themeActiveItemFontColor.value = settings.themeActiveItemFontColor || "#ffffff";
+    if (elements.themeActiveItemFontSize) elements.themeActiveItemFontSize.value = activeItemFontSize;
+    if (elements.themeActiveItemBorderRadius) elements.themeActiveItemBorderRadius.value = activeItemRadius;
+    if (elements.themeActiveItemPadding) elements.themeActiveItemPadding.value = activeItemPadding;
     if (elements.themeFontSize) elements.themeFontSize.value = fontSize;
     if (elements.themeBorderRadius) elements.themeBorderRadius.value = borderRadius;
     if (elements.themePadding) elements.themePadding.value = padding;
@@ -767,6 +780,9 @@
     root.style.setProperty("--theme-active-color", settings.themeActiveBgColor || "#2ba9df");
     root.style.setProperty("--theme-active-item-bg", settings.themeActiveItemBg || "#2ba9df");
     root.style.setProperty("--theme-active-item-font-color", settings.themeActiveItemFontColor || "#ffffff");
+    root.style.setProperty("--theme-active-item-font-size", activeItemFontSize + "px");
+    root.style.setProperty("--theme-active-item-border-radius", activeItemRadius + "px");
+    root.style.setProperty("--theme-active-item-padding", activeItemPadding + "px 12px");
     root.style.setProperty("--theme-font-size", fontSize + "px");
     root.style.setProperty("--theme-border-radius", borderRadius + "px");
     root.style.setProperty("--theme-padding", padding + "px");
@@ -2270,6 +2286,10 @@
     const parsedFontSize = elements.themeFontSize ? parseInt(elements.themeFontSize.value, 10) : NaN;
     const parsedTitleSize = elements.themeSceneTitleFontSize ? parseInt(elements.themeSceneTitleFontSize.value, 10) : NaN;
 
+    const parsedActiveItemFontSize = elements.themeActiveItemFontSize ? parseInt(elements.themeActiveItemFontSize.value, 10) : NaN;
+    const parsedActiveItemRadius = elements.themeActiveItemBorderRadius ? parseInt(elements.themeActiveItemBorderRadius.value, 10) : NaN;
+    const parsedActiveItemPadding = elements.themeActiveItemPadding ? parseInt(elements.themeActiveItemPadding.value, 10) : NaN;
+
     state.tourData.settings = {
       ...state.tourData.settings,
       mouseViewMode: elements.mouseViewModeDrag.checked ? "drag" : "qtvr",
@@ -2286,6 +2306,9 @@
       themeActiveBgColor: elements.themeActiveBgColor ? elements.themeActiveBgColor.value : "#2ba9df",
       themeActiveItemBg: elements.themeActiveItemBg ? elements.themeActiveItemBg.value : "#2ba9df",
       themeActiveItemFontColor: elements.themeActiveItemFontColor ? elements.themeActiveItemFontColor.value : "#ffffff",
+      themeActiveItemFontSize: isNaN(parsedActiveItemFontSize) ? 13 : parsedActiveItemFontSize,
+      themeActiveItemBorderRadius: isNaN(parsedActiveItemRadius) ? 6 : parsedActiveItemRadius,
+      themeActiveItemPadding: isNaN(parsedActiveItemPadding) ? 8 : parsedActiveItemPadding,
       themeFontSize: isNaN(parsedFontSize) ? 14 : parsedFontSize,
       themeBorderRadius: isNaN(parsedRadius) ? 8 : parsedRadius,
       themePadding: isNaN(parsedPadding) ? 8 : parsedPadding,
@@ -3220,10 +3243,16 @@
         li.classList.add("active");
         if (settings.themeActiveItemBg) li.style.backgroundColor = settings.themeActiveItemBg;
         if (settings.themeActiveItemFontColor) li.style.color = settings.themeActiveItemFontColor;
+        if (settings.themeActiveItemFontSize !== undefined) li.style.fontSize = settings.themeActiveItemFontSize + "px";
+        if (settings.themeActiveItemBorderRadius !== undefined) li.style.borderRadius = settings.themeActiveItemBorderRadius + "px";
+        if (settings.themeActiveItemPadding !== undefined) li.style.padding = settings.themeActiveItemPadding + "px 12px";
       } else {
         li.classList.remove("active");
         li.style.backgroundColor = "";
         li.style.color = "";
+        li.style.fontSize = "";
+        li.style.borderRadius = "";
+        li.style.padding = "";
       }
     });
   }

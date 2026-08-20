@@ -5,6 +5,15 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-20
+
+### Added & Improved
+
+- **Active Scene Item Metrics Customization (`li.active`)**:
+  - Added dedicated `Font Size (px)`, `Radius (px)`, and `Padding (px)` controls specifically for `li.active` in the UI/UX settings panel (`themeActiveItemFontSize`, `themeActiveItemBorderRadius`, `themeActiveItemPadding`).
+- **Button Hover State Clarification**:
+  - Renamed `Btn Active:` label in Global Theme Colors to `Btn Hover / Active:` for clear user intuition and explicit styling of button hover/active states.
+
 ## [1.4.1] - 2026-08-20
 
 ### Fixed
