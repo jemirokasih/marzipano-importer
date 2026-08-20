@@ -242,6 +242,8 @@ textarea {
   align-items: center;
   cursor: pointer;
   margin-right: 15px;
+  color: #888888;
+  transition: color 0.15s ease;
 }
 
 .setting-choice .input {
@@ -255,16 +257,21 @@ textarea {
 .setting-choice .icon {
   width: 15px;
   height: 15px;
-  fill: #2ba9df;
   margin-right: 5px;
 }
 
 .setting-choice .enable {
   display: none;
+  fill: #2ba9df;
 }
 
 .setting-choice .disable {
   display: inline-block;
+  fill: #666666;
+}
+
+.setting-choice .input:checked ~ .text {
+  color: #ffffff;
 }
 
 .setting-choice .input:checked ~ .enable {
