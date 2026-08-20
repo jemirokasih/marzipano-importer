@@ -227,6 +227,13 @@ textarea {
   display: block;
 }
 
+.ui-ux-accordion.expand .accordion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
 /* Settings */
 .setting {
   display: flex;

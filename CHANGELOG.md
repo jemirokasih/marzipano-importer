@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaced broken SVG path for `#radio-off-icon` so unchecked radio options render as an open ring instead of a solid filled circle.
   - Removed redundant `for` attributes on wrapper `<label>` tags to prevent double-click event propagation in web browsers.
   - Updated `.setting-choice .input` CSS rules to use accessible visually-hidden layout (`opacity: 0; position: absolute;`) so radio states update smoothly.
+- **Fix UI / UX Customization Accordion Toggle**:
+  - Removed inline `style="display: flex;"` from `<div class="accordion-content">` which previously overrode CSS `.accordion-content { display: none; }` when collapsed.
+  - Added `.ui-ux-accordion.expand .accordion-content` CSS rule so panel expands/collapses cleanly when clicked.
 
 ## [1.8.3] - 2026-08-20
 
