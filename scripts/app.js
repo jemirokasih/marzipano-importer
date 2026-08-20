@@ -101,6 +101,8 @@
 
     showHeaderToggle: document.getElementById("showHeaderToggle"),
     showSceneTitleToggle: document.getElementById("showSceneTitleToggle"),
+    themeNavbarBgColor: document.getElementById("themeNavbarBgColor"),
+    themeFullscreenPos: document.getElementById("themeFullscreenPos"),
     themeLogoPos: document.getElementById("themeLogoPos"),
     themeTitlePos: document.getElementById("themeTitlePos"),
     themeSceneTitleBgColor: document.getElementById("themeSceneTitleBgColor"),
@@ -122,6 +124,7 @@
     topNavbar: document.getElementById("topNavbar"),
     navbarLogoSlot: document.getElementById("navbarLogoSlot"),
     navbarTitleSlot: document.getElementById("navbarTitleSlot"),
+    navbarFullscreenSlot: document.getElementById("navbarFullscreenSlot"),
     floatingTitleOverlay: document.getElementById("floatingTitleOverlay"),
     floatingPanoramaName: document.getElementById("floatingPanoramaName"),
 
@@ -465,6 +468,8 @@
     // UI/UX Styling Settings
     if (elements.showHeaderToggle) elements.showHeaderToggle.addEventListener("change", updateSettings);
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.addEventListener("change", updateSettings);
+    if (elements.themeNavbarBgColor) elements.themeNavbarBgColor.addEventListener("input", updateSettings);
+    if (elements.themeFullscreenPos) elements.themeFullscreenPos.addEventListener("change", updateSettings);
     if (elements.themeLogoPos) elements.themeLogoPos.addEventListener("change", updateSettings);
     if (elements.themeTitlePos) elements.themeTitlePos.addEventListener("change", updateSettings);
     if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.addEventListener("input", updateSettings);
@@ -764,6 +769,10 @@
 
     if (elements.showHeaderToggle) elements.showHeaderToggle.checked = settings.showHeader !== false;
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.checked = settings.showSceneTitle !== false;
+    if (elements.themeNavbarBgColor) elements.themeNavbarBgColor.value = settings.themeNavbarBgColor || "#000000";
+    if (elements.themeFullscreenPos) elements.themeFullscreenPos.value = settings.themeFullscreenPos || "navbar";
+    if (elements.themeLogoPos) elements.themeLogoPos.value = settings.themeLogoPos || "navbar";
+    if (elements.themeTitlePos) elements.themeTitlePos.value = settings.themeTitlePos || "navbar";
     if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.value = settings.themeSceneTitleBgColor || "#000000";
     if (elements.themeSceneTitleFontColor) elements.themeSceneTitleFontColor.value = settings.themeSceneTitleFontColor || "#ffffff";
     if (elements.themeSceneTitleFontSize) elements.themeSceneTitleFontSize.value = titleFontSize;
@@ -782,6 +791,7 @@
 
     // Set Root CSS Custom Variables Live
     const root = document.documentElement;
+    root.style.setProperty("--theme-navbar-bg", (settings.themeNavbarBgColor || "#000000") + "e6");
     root.style.setProperty("--theme-scene-title-bg", settings.themeSceneTitleBgColor || "#000000");
     root.style.setProperty("--theme-scene-title-font", settings.themeSceneTitleFontColor || "#ffffff");
     root.style.setProperty("--theme-scene-title-size", titleFontSize + "px");
@@ -840,7 +850,7 @@
     if (viewControlOverlay) {
       viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
       const pos = settings.themeControlPos || "bottom-right";
-      viewControlOverlay.style.top = pos.includes("top") ? "20px" : "auto";
+      viewControlOverlay.style.top = pos.includes("top") ? (isNavbarEnabled ? "64px" : "20px") : "auto";
       viewControlOverlay.style.bottom = pos.includes("bottom") ? "20px" : "auto";
       viewControlOverlay.style.left = pos.includes("left") ? "20px" : "auto";
       viewControlOverlay.style.right = pos.includes("right") ? "20px" : "auto";
@@ -849,23 +859,39 @@
       viewControlOverlay.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
     }
 
-    // 4. Fullscreen Button Overlay
-    const fullscreenOverlay = document.getElementById("fullscreenButtonOverlay");
-    if (fullscreenOverlay) {
-      fullscreenOverlay.style.display = settings.fullscreenButton ? "flex" : "none";
-      const btn = fullscreenOverlay.querySelector("button");
-      if (btn) {
-        btn.style.borderRadius = borderRadius + "px";
-        btn.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
-      }
-    }
-
-    // 5. Navbar (Header Bar) Visibility
+    // 4. Navbar (Header Bar) Visibility & Style
     const isNavbarEnabled = settings.showHeader !== false;
     if (elements.topNavbar) {
       elements.topNavbar.style.display = isNavbarEnabled ? "flex" : "none";
-      elements.topNavbar.style.backgroundColor = (settings.themeBgColor || "#000000") + "e6";
+      elements.topNavbar.style.backgroundColor = (settings.themeNavbarBgColor || "#000000") + "e6";
       elements.topNavbar.style.color = settings.themeFontColor || "#ffffff";
+    }
+
+    // 5. Fullscreen Button Placement
+    const fullscreenOverlay = document.getElementById("fullscreenButtonOverlay");
+    const toggleFullscreenBtn = document.getElementById("toggleFullscreenBtn");
+    const fsPos = settings.themeFullscreenPos || "navbar";
+    const isFsEnabled = !!settings.fullscreenButton;
+
+    if (elements.navbarFullscreenSlot) elements.navbarFullscreenSlot.innerHTML = "";
+    if (fullscreenOverlay) fullscreenOverlay.style.display = "none";
+
+    if (isFsEnabled && toggleFullscreenBtn) {
+      toggleFullscreenBtn.style.borderRadius = borderRadius + "px";
+      toggleFullscreenBtn.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
+
+      if (fsPos === "navbar" && isNavbarEnabled && elements.navbarFullscreenSlot) {
+        toggleFullscreenBtn.style.backgroundColor = "transparent";
+        elements.navbarFullscreenSlot.appendChild(toggleFullscreenBtn);
+      } else if (fullscreenOverlay) {
+        fullscreenOverlay.appendChild(toggleFullscreenBtn);
+        fullscreenOverlay.style.display = "flex";
+        const pos = fsPos.startsWith("overlay-") ? fsPos.replace("overlay-", "") : fsPos;
+        fullscreenOverlay.style.top = (pos.includes("top") || pos.includes("below-header")) ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+        fullscreenOverlay.style.bottom = pos.includes("bottom") ? "20px" : "auto";
+        fullscreenOverlay.style.left = pos.includes("left") ? "20px" : "auto";
+        fullscreenOverlay.style.right = (pos.includes("right") || pos.includes("below-header")) ? "20px" : "auto";
+      }
     }
 
     // 6. Brand Logo Placement & Proportional Scaling
@@ -2374,7 +2400,9 @@
       fullscreenButton: elements.fullscreenButton.checked,
       viewControlButtons: elements.viewControlButtons.checked,
       showHeader: elements.showHeaderToggle ? elements.showHeaderToggle.checked : true,
-      showSceneTitle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
+      showSceneTitleToggle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
+      themeNavbarBgColor: elements.themeNavbarBgColor ? elements.themeNavbarBgColor.value : "#000000",
+      themeFullscreenPos: elements.themeFullscreenPos ? elements.themeFullscreenPos.value : "navbar",
       themeLogoPos: elements.themeLogoPos ? elements.themeLogoPos.value : "navbar",
       themeTitlePos: elements.themeTitlePos ? elements.themeTitlePos.value : "navbar",
       themeSceneTitleBgColor: elements.themeSceneTitleBgColor ? elements.themeSceneTitleBgColor.value : "#000000",
@@ -3487,8 +3515,34 @@
   var topNavbar = document.getElementById("topNavbar");
   if (topNavbar) {
     topNavbar.style.display = isNavbarEnabled ? "flex" : "none";
-    if (settings.themeBgColor) topNavbar.style.backgroundColor = settings.themeBgColor + "e6";
+    var navBg = settings.themeNavbarBgColor || settings.themeBgColor || "#000000";
+    topNavbar.style.backgroundColor = navBg + "e6";
     if (settings.themeFontColor) topNavbar.style.color = settings.themeFontColor;
+  }
+
+  var btnFullscreen = document.getElementById("btnFullscreen");
+  var fullscreenOverlay = document.getElementById("fullscreenOverlay");
+  var navbarFullscreenSlot = document.getElementById("navbarFullscreenSlot");
+  var fsPos = settings.themeFullscreenPos || "navbar";
+  var isFsEnabled = !!settings.fullscreenButton;
+
+  if (fullscreenOverlay) fullscreenOverlay.style.display = "none";
+  if (isFsEnabled && btnFullscreen) {
+    if (settings.themeBorderRadius !== undefined) btnFullscreen.style.borderRadius = settings.themeBorderRadius + "px";
+    if (settings.themeBgColor) btnFullscreen.style.backgroundColor = settings.themeBgColor + "cc";
+
+    if (fsPos === "navbar" && isNavbarEnabled && navbarFullscreenSlot) {
+      btnFullscreen.style.backgroundColor = "transparent";
+      navbarFullscreenSlot.appendChild(btnFullscreen);
+    } else if (fullscreenOverlay) {
+      fullscreenOverlay.appendChild(btnFullscreen);
+      fullscreenOverlay.style.display = "flex";
+      var fPos = fsPos.indexOf("overlay-") === 0 ? fsPos.replace("overlay-", "") : fsPos;
+      fullscreenOverlay.style.top = (fPos.indexOf("top") !== -1 || fPos.indexOf("below-header") !== -1) ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+      fullscreenOverlay.style.bottom = fPos.indexOf("bottom") !== -1 ? "20px" : "auto";
+      fullscreenOverlay.style.left = fPos.indexOf("left") !== -1 ? "20px" : "auto";
+      fullscreenOverlay.style.right = (fPos.indexOf("right") !== -1 || fPos.indexOf("below-header") !== -1) ? "20px" : "auto";
+    }
   }
 
   var logoPos = settings.themeLogoPos || "navbar";

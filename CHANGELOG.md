@@ -5,6 +5,15 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-08-20
+
+### Added & Improved
+
+- **Flexible Fullscreen Button Position (`themeFullscreenPos`)**:
+  - Added option to place Fullscreen Button either inside the Top Navbar (`navbar`) or as a floating overlay element positioned below header / top right (`overlay-below-header`), top left, bottom right, or bottom left.
+- **Dedicated Navbar Background Color (`themeNavbarBgColor`)**:
+  - Added independent color picker control (`Navbar Bg Color` / `themeNavbarBgColor`) to customize top navbar background color and transparency (`--theme-navbar-bg`).
+
 ## [1.6.0] - 2026-08-20
 
 ### Added & Refactored
