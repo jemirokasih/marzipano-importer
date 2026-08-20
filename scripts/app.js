@@ -32,6 +32,13 @@
   // DOM Elements
   const elements = {
     // Header
+    saveStatus: document.getElementById("saveStatus"),
+    resetProjectButton: document.getElementById("resetProjectButton"),
+    saveProjectButton: document.getElementById("saveProjectButton"),
+    saveToFileButton: document.getElementById("saveToFileButton"),
+    loadFileButton: document.getElementById("loadFileButton"),
+    loadFileInput: document.getElementById("loadFileInput"),
+    loadProjectButton: document.getElementById("loadProjectButton"),
     importButton: document.getElementById("importButton"),
     exportButton: document.getElementById("exportButton"),
     helpButton: document.getElementById("helpButton"),
@@ -76,6 +83,12 @@
 
     linkHotspotModal: document.getElementById("linkHotspotModal"),
     linkHotspotTarget: document.getElementById("linkHotspotTarget"),
+    captureTargetViewBtn: document.getElementById("captureTargetViewBtn"),
+    resetTargetViewBtn: document.getElementById("resetTargetViewBtn"),
+    targetViewYawInput: document.getElementById("targetViewYawInput"),
+    targetViewPitchInput: document.getElementById("targetViewPitchInput"),
+    targetViewFovInput: document.getElementById("targetViewFovInput"),
+    targetViewStatus: document.getElementById("targetViewStatus"),
     saveLinkHotspotButton: document.getElementById("saveLinkHotspotButton"),
     cancelLinkHotspotButton: document.getElementById("cancelLinkHotspotButton"),
 
@@ -84,15 +97,261 @@
     exportStatus: document.getElementById("exportStatus"),
   };
 
+  // IndexedDB Storage Engine
+  const DB_NAME = "MarzipanoTourEditorDB";
+  const DB_VERSION = 1;
+  const STORE_NAME = "projects";
+  const PROJECT_KEY = "current_project";
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      request.onsuccess = (e) => resolve(e.target.result);
+      request.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  let autoSaveTimeout = null;
+
+  function triggerAutoSave() {
+    updateSaveStatus("saving", "⏳ Saving...");
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+      saveProjectToDB()
+        .then(() => {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          updateSaveStatus("saved", `💾 Saved ${timeStr}`);
+        })
+        .catch((err) => {
+          console.error("Auto-save failed:", err);
+          updateSaveStatus("error", "⚠️ Save failed");
+        });
+    }, 1000);
+  }
+
+  function updateSaveStatus(type, text) {
+    if (!elements.saveStatus) return;
+    elements.saveStatus.textContent = text;
+    elements.saveStatus.className = `save-status ${type === "saving" ? "saving" : type === "error" ? "error" : ""}`;
+  }
+
+  async function saveProjectToDB() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const dataToSave = {
+        tourData: state.tourData,
+        sceneImages: state.sceneImages,
+        importedArchive: state.importedArchive,
+        currentSceneIndex: state.currentSceneIndex,
+        savedAt: Date.now()
+      };
+      const req = store.put(dataToSave, PROJECT_KEY);
+      req.onsuccess = () => resolve(true);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function loadProjectFromDB() {
+    try {
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(PROJECT_KEY);
+        req.onsuccess = () => {
+          resolve(req.result || null);
+        };
+        req.onerror = (e) => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn("Failed to open DB for load:", err);
+      return null;
+    }
+  }
+
+  async function handleManualSave() {
+    updateSaveStatus("saving", "⏳ Saving...");
+    try {
+      await saveProjectToDB();
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      updateSaveStatus("saved", `💾 Saved ${timeStr}`);
+      alert(`Project "${state.tourData.name}" saved successfully to browser storage!`);
+    } catch (err) {
+      alert("Failed to save project to browser storage: " + err.message);
+      updateSaveStatus("error", "⚠️ Save failed");
+    }
+  }
+
+  async function handleManualLoad() {
+    const saved = await loadProjectFromDB();
+    if (!saved || !saved.tourData || !saved.tourData.scenes || saved.tourData.scenes.length === 0) {
+      alert("No saved project found in browser storage.");
+      return;
+    }
+    if (confirm(`Load saved project "${saved.tourData.name}" from browser storage? Unsaved changes in current view will be replaced.`)) {
+      state.tourData = saved.tourData;
+      state.sceneImages = saved.sceneImages || {};
+      state.importedArchive = saved.importedArchive || null;
+      elements.projectName.value = state.tourData.name || "Untitled Project";
+      const selectIdx = (saved.currentSceneIndex >= 0 && saved.currentSceneIndex < state.tourData.scenes.length) ? saved.currentSceneIndex : 0;
+      selectScene(selectIdx);
+      const savedTime = saved.savedAt ? new Date(saved.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+      updateSaveStatus("saved", `💾 Loaded ${savedTime}`);
+    }
+  }
+
+  // Reset Project State
+  async function resetProjectState() {
+    if (confirm("Are you sure you want to reset the editor and start a new project? All unsaved changes and browser cache will be cleared.")) {
+      state.tourData = {
+        name: "Untitled Project",
+        scenes: [],
+        settings: {
+          mouseViewMode: "drag",
+          autorotateEnabled: false,
+          fullscreenButton: true,
+          viewControlButtons: true,
+        },
+      };
+      state.sceneImages = {};
+      state.importedArchive = null;
+      state.currentScene = null;
+      state.currentSceneIndex = -1;
+
+      await clearProjectFromDB();
+
+      elements.projectName.value = "Untitled Project";
+      if (elements.panoramaName) {
+        elements.panoramaName.textContent = "Select a scene to preview";
+      }
+
+      if (elements.pano) {
+        elements.pano.innerHTML = "";
+      }
+      state.scene = null;
+
+      updateUI();
+      if (elements.help) elements.help.classList.remove("hidden");
+      if (elements.preview) elements.preview.classList.add("hidden");
+      updateSaveStatus("saved", "💾 Reset completed");
+      markAsSaved();
+    }
+  }
+
+  // Save Project to File (.json)
+  function saveProjectToFile() {
+    if (!state.tourData.scenes || state.tourData.scenes.length === 0) {
+      alert("No scenes to save. Please add at least one scene to the project.");
+      return;
+    }
+    const projectContent = {
+      version: "1.0",
+      type: "marzipano-project",
+      savedAt: new Date().toISOString(),
+      tourData: state.tourData,
+      sceneImages: state.sceneImages,
+      importedArchive: state.importedArchive
+    };
+    const jsonString = JSON.stringify(projectContent, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = (state.tourData.name || "tour-project")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-");
+    a.href = url;
+    a.download = `${safeName}.marzipano.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Load Project from File (.json)
+  function handleLoadProjectFromFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        const tourData = parsed.tourData || (parsed.scenes ? parsed : null);
+        if (tourData && Array.isArray(tourData.scenes)) {
+          saveHistoryState();
+          state.tourData = tourData;
+          state.sceneImages = parsed.sceneImages || {};
+          state.importedArchive = parsed.importedArchive || null;
+          elements.projectName.value = state.tourData.name || "Loaded Project";
+          markAsChanged();
+          updateSaveStatus("saved", "💾 Loaded from File");
+          if (state.tourData.scenes.length > 0) {
+            selectScene(0);
+          } else {
+            updateUI();
+          }
+          alert(`Project "${state.tourData.name}" loaded successfully from file!`);
+        } else {
+          alert("Selected file does not contain valid Marzipano project data.");
+        }
+      } catch (err) {
+        alert("Failed to parse project JSON file: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  // Clear DB Helper
+  async function clearProjectFromDB() {
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      store.delete(PROJECT_KEY);
+    } catch (e) {
+      console.warn("Failed to clear DB:", e);
+    }
+  }
+
   // Initialize
-  function init() {
+  async function init() {
     setupEventListeners();
     initMarzipanoViewer();
-    updateUI();
     setupBeforeUnload();
 
-    // Show help by default
-    elements.help.classList.remove("hidden");
+    // Check for saved project in IndexedDB
+    const saved = await loadProjectFromDB();
+    if (saved && saved.tourData && saved.tourData.scenes && saved.tourData.scenes.length > 0) {
+      state.tourData = saved.tourData;
+      state.sceneImages = saved.sceneImages || {};
+      state.importedArchive = saved.importedArchive || null;
+      elements.projectName.value = state.tourData.name || "Untitled Project";
+
+      const savedTime = saved.savedAt ? new Date(saved.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
+      updateSaveStatus("saved", `💾 Restored ${savedTime}`);
+
+      const selectIdx = (saved.currentSceneIndex >= 0 && saved.currentSceneIndex < state.tourData.scenes.length)
+        ? saved.currentSceneIndex
+        : 0;
+      selectScene(selectIdx);
+    } else {
+      updateUI();
+      // Show help by default if no saved project
+      elements.help.classList.remove("hidden");
+      updateSaveStatus("saved", "💾 Auto-save ready");
+    }
   }
 
   // Setup Before Unload Warning
@@ -130,6 +389,7 @@
   // Mark as changed
   function markAsChanged() {
     state.hasUnsavedChanges = true;
+    triggerAutoSave();
   }
 
   // Mark as saved
@@ -140,6 +400,12 @@
   // Setup Event Listeners
   function setupEventListeners() {
     // Header buttons
+    if (elements.resetProjectButton) elements.resetProjectButton.addEventListener("click", resetProjectState);
+    if (elements.saveProjectButton) elements.saveProjectButton.addEventListener("click", handleManualSave);
+    if (elements.saveToFileButton) elements.saveToFileButton.addEventListener("click", saveProjectToFile);
+    if (elements.loadFileButton) elements.loadFileButton.addEventListener("click", () => elements.loadFileInput.click());
+    if (elements.loadFileInput) elements.loadFileInput.addEventListener("change", handleLoadProjectFromFile);
+    if (elements.loadProjectButton) elements.loadProjectButton.addEventListener("click", handleManualLoad);
     elements.importButton.addEventListener("click", () =>
       showModal("importModal")
     );
@@ -180,16 +446,77 @@
     elements.uploadArea.addEventListener("drop", handleDrop);
 
     // Info hotspot modal
-    elements.saveInfoHotspotButton.addEventListener("click", saveInfoHotspot);
-    elements.cancelInfoHotspotButton.addEventListener("click", () =>
-      hideModal("infoHotspotModal")
-    );
+    if (elements.saveInfoHotspotButton) elements.saveInfoHotspotButton.addEventListener("click", saveInfoHotspot);
+    if (elements.cancelInfoHotspotButton)
+      elements.cancelInfoHotspotButton.addEventListener("click", () => {
+        removeTempHotspotMarker();
+        hideModal("infoHotspotModal");
+      });
 
     // Link hotspot modal
-    elements.saveLinkHotspotButton.addEventListener("click", saveLinkHotspot);
-    elements.cancelLinkHotspotButton.addEventListener("click", () =>
-      hideModal("linkHotspotModal")
-    );
+    if (elements.captureTargetViewBtn) {
+      elements.captureTargetViewBtn.addEventListener("click", function () {
+        if (!state.scene) {
+          alert("No active 3D scene view to capture from.");
+          return;
+        }
+        const currentParams = state.scene.view().parameters();
+        state.pendingTargetView = {
+          yaw: currentParams.yaw,
+          pitch: currentParams.pitch,
+          fov: currentParams.fov,
+        };
+        updateTargetViewStatusUI(state.pendingTargetView);
+      });
+    }
+
+    if (elements.resetTargetViewBtn) {
+      elements.resetTargetViewBtn.addEventListener("click", function () {
+        state.pendingTargetView = null;
+        updateTargetViewStatusUI(null);
+      });
+    }
+
+    function handleManualTargetViewInput() {
+      if (!elements.targetViewYawInput || !elements.targetViewPitchInput) return;
+      const yawDeg = parseFloat(elements.targetViewYawInput.value);
+      const pitchDeg = parseFloat(elements.targetViewPitchInput.value);
+      const fovDeg = parseFloat(elements.targetViewFovInput.value);
+
+      if (!isNaN(yawDeg) && !isNaN(pitchDeg)) {
+        const yawRad = (yawDeg * Math.PI) / 180;
+        const pitchRad = (pitchDeg * Math.PI) / 180;
+        const fovRad = !isNaN(fovDeg) ? (fovDeg * Math.PI) / 180 : Math.PI / 2;
+
+        state.pendingTargetView = {
+          yaw: yawRad,
+          pitch: pitchRad,
+          fov: fovRad,
+        };
+
+        if (elements.targetViewStatus) {
+          elements.targetViewStatus.textContent = `⚙️ Manual View: Yaw ${yawDeg.toFixed(1)}°, Pitch ${pitchDeg.toFixed(1)}°, FOV ${(!isNaN(fovDeg) ? fovDeg : 90).toFixed(1)}°`;
+          elements.targetViewStatus.style.color = "#66be71";
+        }
+      } else {
+        state.pendingTargetView = null;
+        if (elements.targetViewStatus) {
+          elements.targetViewStatus.textContent = "Default (Uses Target Scene's Initial View)";
+          elements.targetViewStatus.style.color = "#888";
+        }
+      }
+    }
+
+    if (elements.targetViewYawInput) elements.targetViewYawInput.addEventListener("input", handleManualTargetViewInput);
+    if (elements.targetViewPitchInput) elements.targetViewPitchInput.addEventListener("input", handleManualTargetViewInput);
+    if (elements.targetViewFovInput) elements.targetViewFovInput.addEventListener("input", handleManualTargetViewInput);
+
+    if (elements.saveLinkHotspotButton) elements.saveLinkHotspotButton.addEventListener("click", saveLinkHotspot);
+    if (elements.cancelLinkHotspotButton)
+      elements.cancelLinkHotspotButton.addEventListener("click", () => {
+        removeTempHotspotMarker();
+        hideModal("linkHotspotModal");
+      });
 
     // Accordion toggles
     document.querySelectorAll(".accordion-name").forEach((accordion) => {
@@ -206,11 +533,192 @@
         }
       });
     });
+
+    // View Controls and Fullscreen Overlay Action Handlers
+    setupViewControlOverlay();
+  }
+
+  function setupViewControlOverlay() {
+    let movementInterval = null;
+
+    function startControlMove(action) {
+      if (!state.scene || !state.scene.view()) return;
+      stopControlMove();
+
+      function step() {
+        if (!state.scene || !state.scene.view()) return;
+        const view = state.scene.view();
+        const currentYaw = view.yaw();
+        const currentPitch = view.pitch();
+        const currentFov = view.fov();
+
+        switch (action) {
+          case "up":
+            view.setPitch(currentPitch + 0.03);
+            break;
+          case "down":
+            view.setPitch(currentPitch - 0.03);
+            break;
+          case "left":
+            view.setYaw(currentYaw - 0.03);
+            break;
+          case "right":
+            view.setYaw(currentYaw + 0.03);
+            break;
+          case "zoomIn":
+            view.setFov(currentFov * 0.96);
+            break;
+          case "zoomOut":
+            view.setFov(currentFov * 1.04);
+            break;
+        }
+      }
+
+      step();
+      movementInterval = setInterval(step, 30);
+    }
+
+    function stopControlMove() {
+      if (movementInterval) {
+        clearInterval(movementInterval);
+        movementInterval = null;
+      }
+    }
+
+    const btnUp = document.getElementById("viewBtnUp");
+    const btnDown = document.getElementById("viewBtnDown");
+    const btnLeft = document.getElementById("viewBtnLeft");
+    const btnRight = document.getElementById("viewBtnRight");
+    const btnZoomIn = document.getElementById("viewBtnZoomIn");
+    const btnZoomOut = document.getElementById("viewBtnZoomOut");
+
+    const controls = [
+      { btn: btnUp, action: "up" },
+      { btn: btnDown, action: "down" },
+      { btn: btnLeft, action: "left" },
+      { btn: btnRight, action: "right" },
+      { btn: btnZoomIn, action: "zoomIn" },
+      { btn: btnZoomOut, action: "zoomOut" },
+    ];
+
+    controls.forEach(({ btn, action }) => {
+      if (!btn) return;
+      btn.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        startControlMove(action);
+      });
+      btn.addEventListener("mouseup", stopControlMove);
+      btn.addEventListener("mouseleave", stopControlMove);
+      btn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        startControlMove(action);
+      });
+      btn.addEventListener("touchend", stopControlMove);
+    });
+
+    // Fullscreen Toggle
+    const toggleFullscreenBtn = document.getElementById("toggleFullscreenBtn");
+    if (toggleFullscreenBtn) {
+      toggleFullscreenBtn.addEventListener("click", () => {
+        const previewArea = document.getElementById("previewArea") || document.getElementById("pano") || document.documentElement;
+        if (!document.fullscreenElement) {
+          if (previewArea.requestFullscreen) {
+            previewArea.requestFullscreen();
+          } else if (previewArea.webkitRequestFullscreen) {
+            previewArea.webkitRequestFullscreen();
+          }
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      });
+    }
   }
 
   // Initialize Marzipano Viewer
   function initMarzipanoViewer() {
     state.viewer = new Marzipano.Viewer(elements.pano);
+  }
+
+  let autorotateMovement = null;
+
+  // Apply settings (mouseViewMode, autorotate) to Marzipano Viewer
+  function applySettingsToViewer() {
+    if (!state.tourData || !state.tourData.settings) return;
+
+    const settings = state.tourData.settings;
+    const mode = settings.mouseViewMode || "drag";
+    const autorotateEnabled = !!settings.autorotateEnabled;
+
+    // Synchronize UI radio buttons and checkboxes
+    if (elements.mouseViewModeDrag && elements.mouseViewModeQtvr) {
+      elements.mouseViewModeDrag.checked = (mode === "drag");
+      elements.mouseViewModeQtvr.checked = (mode === "qtvr");
+    }
+    if (elements.autorotateEnabled) {
+      elements.autorotateEnabled.checked = autorotateEnabled;
+    }
+    if (elements.fullscreenButton) {
+      elements.fullscreenButton.checked = !!settings.fullscreenButton;
+    }
+    if (elements.viewControlButtons) {
+      elements.viewControlButtons.checked = !!settings.viewControlButtons;
+    }
+
+    if (!state.viewer) return;
+
+    // 1. Mouse View Mode (drag vs qtvr)
+    const controls = state.viewer.controls();
+    if (controls) {
+      if (mode === "qtvr") {
+        try {
+          controls.enableControlMethod("qtvr");
+          controls.disableControlMethod("drag");
+        } catch (e) {
+          console.warn("QTVR mode enable notice:", e);
+        }
+      } else {
+        try {
+          controls.enableControlMethod("drag");
+          controls.disableControlMethod("qtvr");
+        } catch (e) {
+          console.warn("Drag mode enable notice:", e);
+        }
+      }
+    }
+
+    // 2. Autorotate
+    if (autorotateEnabled) {
+      if (!autorotateMovement && typeof Marzipano !== "undefined" && Marzipano.autorotate) {
+        autorotateMovement = Marzipano.autorotate({
+          yawSpeed: 0.03, // approx 1.7 deg/sec
+          targetPitch: 0,
+          targetFov: Math.PI / 2,
+        });
+      }
+      if (autorotateMovement) {
+        state.viewer.startMovement(autorotateMovement);
+        state.viewer.setIdleMovement(3000, autorotateMovement);
+      }
+    } else {
+      state.viewer.stopMovement();
+      state.viewer.setIdleMovement(Infinity);
+    }
+
+    // 3. View Control Buttons Overlay
+    const viewControlOverlay = document.getElementById("viewControlButtonsOverlay");
+    if (viewControlOverlay) {
+      viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
+    }
+
+    // 4. Fullscreen Button Overlay
+    const fullscreenOverlay = document.getElementById("fullscreenButtonOverlay");
+    if (fullscreenOverlay) {
+      fullscreenOverlay.style.display = settings.fullscreenButton ? "flex" : "none";
+    }
   }
 
   // Update UI
@@ -220,6 +728,9 @@
 
     // Update panorama list
     renderPanoramaList();
+
+    // Update settings in UI and viewer
+    applySettingsToViewer();
 
     // Update preview
     if (state.currentScene) {
@@ -445,15 +956,15 @@
   }
 
   // Select Scene
-  function selectScene(index) {
+  function selectScene(index, overrideInitialView) {
     state.currentSceneIndex = index;
     state.currentScene = state.tourData.scenes[index];
-    renderScene(state.currentScene);
+    renderScene(state.currentScene, overrideInitialView);
     updateUI();
   }
 
   // Render Scene in Marzipano Viewer
-  function renderScene(sceneData) {
+  function renderScene(sceneData, overrideInitialView) {
     if (!sceneData || !state.viewer) return;
 
     let source;
@@ -523,13 +1034,14 @@
       return;
     }
 
-    // Create view
+    // Create view with target view if provided or default initial view parameters
+    const initialView = overrideInitialView || sceneData.initialViewParameters;
     const limiter = Marzipano.RectilinearView.limit.traditional(
       sceneData.faceSize || 4096,
       (100 * Math.PI) / 180
     );
     const view = new Marzipano.RectilinearView(
-      sceneData.initialViewParameters,
+      initialView,
       limiter
     );
 
@@ -546,6 +1058,9 @@
 
     // Render hotspots
     renderHotspots(sceneData);
+
+    // Apply viewer settings (mouseViewMode, autorotate)
+    applySettingsToViewer();
 
     // Update panorama name
     elements.panoramaName.textContent = sceneData.name;
@@ -960,15 +1475,12 @@
         <circle cx="12" cy="12" r="10" 
                 stroke="white" 
                 stroke-width="2" 
-                fill="none"/>
-        <line x1="12" y1="8" x2="12" y2="12" 
+                fill="rgba(0,0,0,0.5)"/>
+        <line x1="12" y1="10" x2="12" y2="17" 
               stroke="white" 
               stroke-width="2" 
               stroke-linecap="round"/>
-        <line x1="12" y1="16" x2="12" y2="16" 
-              stroke="white" 
-              stroke-width="2" 
-              stroke-linecap="round"/>
+        <circle cx="12" cy="7" r="1.5" fill="white"/>
       </svg>
     `;
     iconWrapper.appendChild(icon);
@@ -1182,9 +1694,46 @@
     return wrapper;
   }
 
+  let currentTempHotspot = null;
+
+  function createTempHotspotMarker(type, yaw, pitch) {
+    if (!state.scene) return;
+    removeTempHotspotMarker();
+
+    const dummyData = type === "link"
+      ? { yaw, pitch, rotation: 0, target: "" }
+      : { yaw, pitch, title: "New Hotspot", text: "" };
+
+    const element = type === "link"
+      ? createLinkHotspotElement(dummyData, -1)
+      : createInfoHotspotElement(dummyData, -1);
+
+    element.style.opacity = "0.85";
+    element.style.animation = "pulse 1s infinite alternate";
+
+    currentTempHotspot = state.scene.hotspotContainer().createHotspot(element, { yaw, pitch });
+
+    // Force immediate render tick
+    if (state.scene.view()) {
+      const view = state.scene.view();
+      view.setParameters(view.parameters());
+    }
+  }
+
+  function removeTempHotspotMarker() {
+    if (currentTempHotspot && state.scene) {
+      try {
+        state.scene.hotspotContainer().destroyHotspot(currentTempHotspot);
+      } catch (e) {}
+      currentTempHotspot = null;
+    }
+  }
+
   // Render Hotspots
   function renderHotspots(sceneData) {
     if (!state.scene || !sceneData) return;
+
+    removeTempHotspotMarker();
 
     const hotspotContainer = state.scene.hotspotContainer();
 
@@ -1224,6 +1773,15 @@
         element._marzipanoHotspot = marzipanoHotspot;
       });
     }
+
+    // Force Marzipano view render tick so newly created hotspots project and appear instantly
+    if (state.scene && state.scene.view()) {
+      const view = state.scene.view();
+      view.setParameters(view.parameters());
+      if (state.viewer && state.viewer.forceRender) {
+        state.viewer.forceRender();
+      }
+    }
   }
 
   // Handle Hotspot Actions
@@ -1233,15 +1791,12 @@
     switch (action) {
       case "navigate":
         if (type === "link") {
-          // For link hotspots, navigate to target scene
-          const targetScene = state.tourData.scenes.find(
+          // For link hotspots, navigate to target scene with targetView if present
+          const targetIndex = state.tourData.scenes.findIndex(
             (s) => s.id === hotspot.target
           );
-          if (targetScene) {
-            const targetIndex = state.tourData.scenes.findIndex(
-              (s) => s.id === hotspot.target
-            );
-            selectScene(targetIndex);
+          if (targetIndex !== -1) {
+            selectScene(targetIndex, hotspot.targetView);
           }
         } else {
           // For info hotspots, navigate to hotspot position in current scene
@@ -1272,8 +1827,19 @@
           state.currentScene.linkHotspots[index] = hotspot;
           markAsChanged();
 
-          // Re-render to apply rotation
+          // Instantly update active SVG rotation transform in DOM for instant visual feedback
+          const activeWrappers = document.querySelectorAll(`.hotspot.link-hotspot[data-hotspot-index="${index}"]`);
+          activeWrappers.forEach((wrapper) => {
+            const svg = wrapper.querySelector(".link-hotspot-icon svg");
+            if (svg) {
+              const totalRotation = -90 + (hotspot.rotation * 180) / Math.PI;
+              svg.style.transform = `rotate(${totalRotation}deg)`;
+            }
+          });
+
+          // Re-render hotspots and sidebar list
           renderHotspots(state.currentScene);
+          renderHotspotList();
         }
         break;
 
@@ -1301,6 +1867,30 @@
     }
   }
 
+  // Update Target View UI helper
+  function updateTargetViewStatusUI(targetView) {
+    if (!elements.targetViewStatus) return;
+    if (targetView && targetView.yaw !== undefined) {
+      const yawDeg = ((targetView.yaw * 180) / Math.PI).toFixed(1);
+      const pitchDeg = ((targetView.pitch * 180) / Math.PI).toFixed(1);
+      const fovDeg = targetView.fov !== undefined ? ((targetView.fov * 180) / Math.PI).toFixed(1) : "90.0";
+
+      elements.targetViewStatus.textContent = `📷 Custom View: Yaw ${yawDeg}°, Pitch ${pitchDeg}°, FOV ${fovDeg}°`;
+      elements.targetViewStatus.style.color = "#66be71";
+
+      if (elements.targetViewYawInput) elements.targetViewYawInput.value = yawDeg;
+      if (elements.targetViewPitchInput) elements.targetViewPitchInput.value = pitchDeg;
+      if (elements.targetViewFovInput) elements.targetViewFovInput.value = fovDeg;
+    } else {
+      elements.targetViewStatus.textContent = "Default (Uses Target Scene's Initial View)";
+      elements.targetViewStatus.style.color = "#888";
+
+      if (elements.targetViewYawInput) elements.targetViewYawInput.value = "";
+      if (elements.targetViewPitchInput) elements.targetViewPitchInput.value = "";
+      if (elements.targetViewFovInput) elements.targetViewFovInput.value = "";
+    }
+  }
+
   // Edit Link Hotspot
   function editLinkHotspot(index, hotspot) {
     state.pendingHotspot = {
@@ -1308,6 +1898,11 @@
       index: index,
       hotspot: hotspot,
     };
+
+    state.pendingTargetView = hotspot.targetView
+      ? { ...hotspot.targetView }
+      : null;
+    updateTargetViewStatusUI(state.pendingTargetView);
 
     // Populate target dropdown
     elements.linkHotspotTarget.innerHTML =
@@ -1444,6 +2039,7 @@
       viewControlButtons: elements.viewControlButtons.checked,
     };
     markAsChanged();
+    applySettingsToViewer();
   }
 
   // Start Add Info Hotspot
@@ -1483,6 +2079,9 @@
           pitch: coords.pitch,
         };
 
+        // Instantly display temporary hotspot marker on panorama right where user clicked
+        createTempHotspotMarker("info", coords.yaw, coords.pitch);
+
         // Remove click handler
         panoElement.removeEventListener("click", clickHandler);
         state.addingHotspot = null;
@@ -1492,6 +2091,22 @@
       }
     };
     panoElement.addEventListener("click", clickHandler);
+  }
+
+  // Refresh Active Scene in 3D Viewer live without page reload
+  function refreshActiveScene() {
+    if (!state.currentScene || !state.viewer) return;
+
+    let savedViewParams = null;
+    if (state.scene && state.scene.view()) {
+      savedViewParams = state.scene.view().parameters();
+    }
+
+    renderScene(state.currentScene);
+
+    if (savedViewParams && state.scene && state.scene.view()) {
+      state.scene.view().setParameters(savedViewParams);
+    }
   }
 
   // Save Info Hotspot
@@ -1509,11 +2124,11 @@
       // Update existing hotspot - preserve yaw, pitch
       const existingHotspot =
         state.currentScene.infoHotspots[state.pendingHotspot.index];
-      if (existingHotspot.title !== title || existingHotspot.text !== text) {
+      if (existingHotspot) {
         existingHotspot.title = title;
         existingHotspot.text = text;
-        markAsChanged();
       }
+      markAsChanged();
     } else {
       // Create new hotspot
       const hotspot = {
@@ -1522,6 +2137,9 @@
         title: title,
         text: text,
       };
+      if (!state.currentScene.infoHotspots) {
+        state.currentScene.infoHotspots = [];
+      }
       state.currentScene.infoHotspots.push(hotspot);
       markAsChanged();
     }
@@ -1539,8 +2157,8 @@
 
     hideModal("infoHotspotModal");
 
-    // Re-render hotspots
-    renderHotspots(state.currentScene);
+    // Re-render scene and hotspots live
+    refreshActiveScene();
   }
 
   // Start Add Link Hotspot
@@ -1585,6 +2203,9 @@
           pitch: coords.pitch,
         };
 
+        // Instantly display temporary hotspot marker on panorama right where user clicked
+        createTempHotspotMarker("link", coords.yaw, coords.pitch);
+
         // Remove click handler
         panoElement.removeEventListener("click", clickHandler);
         state.addingHotspot = null;
@@ -1602,6 +2223,9 @@
           }
         });
 
+        state.pendingTargetView = null;
+        updateTargetViewStatusUI(null);
+
         // Reset modal title
         const modalTitle = document.querySelector("#linkHotspotModal h2");
         if (modalTitle) {
@@ -1614,8 +2238,18 @@
     panoElement.addEventListener("click", clickHandler);
   }
 
+  // Save History State Helper
+  function saveHistoryState() {
+    // Safe placeholder for history/undo tracking
+  }
+
   // Save Link Hotspot
   function saveLinkHotspot() {
+    if (!state.pendingHotspot) {
+      hideModal("linkHotspotModal");
+      return;
+    }
+
     const target = elements.linkHotspotTarget.value;
 
     if (!target) {
@@ -1623,19 +2257,27 @@
       return;
     }
 
+    saveHistoryState();
+
     // Check if editing existing hotspot
     if (state.pendingHotspot.index !== undefined) {
       // Update existing hotspot - preserve yaw, pitch, rotation
       const existingHotspot =
         state.currentScene.linkHotspots[state.pendingHotspot.index];
-      if (existingHotspot.target !== target) {
+      if (existingHotspot) {
         existingHotspot.target = target;
-        markAsChanged();
+
+        if (state.pendingTargetView) {
+          existingHotspot.targetView = { ...state.pendingTargetView };
+        } else {
+          delete existingHotspot.targetView;
+        }
+
+        if (!existingHotspot.rotation) {
+          existingHotspot.rotation = 0;
+        }
       }
-      // Keep existing rotation if it exists
-      if (!existingHotspot.rotation) {
-        existingHotspot.rotation = 0;
-      }
+      markAsChanged();
     } else {
       // Create new hotspot
       const hotspot = {
@@ -1644,12 +2286,19 @@
         rotation: 0,
         target: target,
       };
+      if (state.pendingTargetView) {
+        hotspot.targetView = { ...state.pendingTargetView };
+      }
+      if (!state.currentScene.linkHotspots) {
+        state.currentScene.linkHotspots = [];
+      }
       state.currentScene.linkHotspots.push(hotspot);
       markAsChanged();
     }
 
-    // Reset pending hotspot
+    // Reset pending states
     state.pendingHotspot = null;
+    state.pendingTargetView = null;
 
     // Reset modal title
     const modalTitle = document.querySelector("#linkHotspotModal h2");
@@ -1659,8 +2308,9 @@
 
     hideModal("linkHotspotModal");
 
-    // Re-render hotspots
-    renderHotspots(state.currentScene);
+    // Re-render scene and hotspots live
+    refreshActiveScene();
+    renderHotspotList();
   }
 
   // Set Initial View
@@ -1778,6 +2428,39 @@
   function handleImportFile(e) {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Direct JSON Project File Import
+    if (file.name.match(/\.json$/i)) {
+      hideModal("importModal");
+      const jsonReader = new FileReader();
+      jsonReader.onload = function (event) {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          const tourData = parsed.tourData || (parsed.scenes ? parsed : null);
+          if (tourData && Array.isArray(tourData.scenes)) {
+            saveHistoryState();
+            state.tourData = tourData;
+            state.sceneImages = parsed.sceneImages || {};
+            state.importedArchive = parsed.importedArchive || null;
+            elements.projectName.value = state.tourData.name || "Imported Project";
+            markAsChanged();
+            updateSaveStatus("saved", "💾 Loaded from File");
+            if (state.tourData.scenes.length > 0) {
+              selectScene(0);
+            } else {
+              updateUI();
+            }
+          } else {
+            alert("Selected JSON file does not contain valid Marzipano project data.");
+          }
+        } catch (err) {
+          alert("Failed to parse project JSON file: " + err.message);
+        }
+      };
+      jsonReader.readAsText(file);
+      e.target.value = "";
+      return;
+    }
 
     hideModal("importModal");
     showModal("exportModal");

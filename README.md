@@ -1,6 +1,8 @@
-# Marzipano Tour Editor
+# Mikrotek Marzipano Importer
 
 A complete, standalone web-based tool for creating, editing, and managing virtual tours using Marzipano.
+
+*Based on [Marzipano Importer](https://github.com/tunnaduong/marzipano-importer) by Tunna Duong and powered by [Marzipano](https://www.marzipano.net/). Maintained by Mikrotek. Jemiro.*
 
 ## Features
 

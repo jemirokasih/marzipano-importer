@@ -992,34 +992,35 @@ textarea.input-field {
 }
 
 .info-hotspot-icon-wrapper {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  transition: all 0.3s;
-  margin-left: -15px;
-  margin-top: -15px;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .info-hotspot:hover .info-hotspot-icon-wrapper {
-  background: rgba(0, 0, 0, 0.8);
-  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.9);
+  border-color: #ffffff;
+  transform: scale(1.15);
 }
 
 .info-hotspot-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .info-hotspot-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .info-hotspot-header {
@@ -1029,26 +1030,30 @@ textarea.input-field {
 .info-hotspot-text {
   display: none;
   position: absolute;
-  left: calc(50% - 15px);
-  top: calc(50% - 15px);
-  transform: translate(-50%, -50%);
-  width: 250px;
+  left: 35px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 260px;
   max-width: 90vw;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(18, 18, 18, 0.95);
   color: white;
-  padding: 15px;
+  padding: 14px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   pointer-events: none;
 }
 
+.info-hotspot:hover .info-hotspot-text,
 .info-hotspot.visible .info-hotspot-text {
   display: block;
+  pointer-events: auto;
 }
 
+.info-hotspot:hover .info-hotspot-header,
 .info-hotspot.visible .info-hotspot-header {
   display: flex;
   align-items: center;
@@ -1220,3 +1225,137 @@ textarea.input-field {
 .seo-article strong {
   font-weight: 600;
 }
+
+/* Save / Load Status & Buttons */
+.save-status {
+  font-size: 11px;
+  color: #66be71;
+  background: rgba(102, 190, 113, 0.15);
+  border: 1px solid rgba(102, 190, 113, 0.3);
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.save-status.saving {
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.15);
+  border-color: rgba(243, 156, 18, 0.3);
+}
+
+.save-status.error {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.15);
+  border-color: rgba(231, 76, 60, 0.3);
+}
+
+#header .button.reset-btn:hover {
+  background-color: #e74c3c;
+}
+
+#header .button.save-btn:hover {
+  background-color: #27ae60;
+}
+
+#header .button.save-file-btn:hover {
+  background-color: #2980b9;
+}
+
+#header .button.load-file-btn:hover {
+  background-color: #d35400;
+}
+
+#header .button.load-btn:hover {
+  background-color: #8e44ad;
+}
+
+/* Preview Area Overlay Controls */
+.preview-area {
+  position: relative;
+}
+
+.preview-controls-overlay {
+  position: absolute;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+#fullscreenButtonOverlay {
+  top: 16px;
+  right: 16px;
+  display: none;
+}
+
+.fullscreen-overlay-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  color: white;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+}
+
+.fullscreen-overlay-btn:hover {
+  background: rgba(43, 169, 223, 0.85);
+  transform: scale(1.08);
+}
+
+#viewControlButtonsOverlay {
+  bottom: 20px;
+  right: 20px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.view-control-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 32px);
+  grid-template-rows: repeat(3, 32px);
+  gap: 4px;
+}
+
+.view-control-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.view-control-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.06);
+}
+
+.view-control-btn:active {
+  background: #2ba9df;
+  transform: scale(0.94);
+}
+
+
