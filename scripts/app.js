@@ -3212,12 +3212,20 @@
 
 <div id="pano"></div>
 
-<div id="brandLogoContainer" class="brand-logo-container">
+<div id="topNavbar" class="top-navbar-bar" style="display: flex;">
+  <div id="navbarLogoSlot" class="navbar-slot navbar-slot-left"></div>
+  <div id="navbarTitleSlot" class="navbar-slot navbar-slot-center">
+    <div id="navbarSceneTitle" class="panorama-name"></div>
+  </div>
+  <div id="navbarFullscreenSlot" class="navbar-slot navbar-slot-right"></div>
+</div>
+
+<div id="brandLogoOverlay" class="brand-logo-overlay">
   <img id="brandLogo" src="app-files/logo.png" style="display: none;" onerror="this.style.display='none'">
 </div>
 
-<div id="headerTitleBar" class="header-title-bar">
-  <h1 id="exportedSceneTitle" class="scene-title"></h1>
+<div id="floatingTitleOverlay" class="floating-title-overlay">
+  <div id="floatingSceneTitle" class="panorama-name"></div>
 </div>
 
 <div id="sceneListOverlay" class="scene-list-overlay">
@@ -3361,22 +3369,8 @@
       e.stopPropagation();
       wrapper.classList.toggle("visible");
     });
-    if (data.linkHotspots) {
-      data.linkHotspots.forEach(function (h) {
-        scene.hotspotContainer().createHotspot(createLinkHotspotElement(h), { yaw: h.yaw, pitch: h.pitch });
-      });
-    }
-
-    if (data.infoHotspots) {
-      data.infoHotspots.forEach(function (h) {
-        scene.hotspotContainer().createHotspot(createInfoHotspotElement(h), { yaw: h.yaw, pitch: h.pitch });
-      });
-    }
-
-    var sceneObj = { data: data, scene: scene, view: view };
-    scenes.push(sceneObj);
-    scenesById[data.id] = sceneObj;
-  });
+    return wrapper;
+  }
 
   function findSceneById(id) {
     return scenesById[id] || null;
@@ -3668,10 +3662,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
 
 .top-navbar-bar { position: absolute; top: 0; left: 0; width: 100%; height: 52px; background: rgba(0, 0, 0, 0.85); color: #ffffff; backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 .top-navbar-bar img { max-height: 40px; max-width: 160px; width: auto; height: auto; object-fit: contain; flex-shrink: 0; }
-.top-navbar-bar .scene-title { font-size: 16px; font-weight: 600; color: inherit; margin: 0; }
+.navbar-slot { display: flex; align-items: center; height: 100%; }
+.navbar-slot-left { justify-content: flex-start; min-width: 160px; }
+.navbar-slot-center { justify-content: center; flex: 1; text-align: center; }
+.navbar-slot-right { justify-content: flex-end; min-width: 160px; }
+.panorama-name { display: flex; align-items: center; justify-content: center; min-height: 36px; padding: 6px 14px; background-color: rgba(0, 0, 0, 0.8); color: #ffffff; font-size: 16px; border-radius: 8px; font-weight: 600; cursor: default; transition: all 0.2s ease; }
 
 .floating-title-overlay { position: absolute; z-index: 99; pointer-events: none; transition: all 0.2s ease; }
-.floating-title-overlay .scene-title { pointer-events: auto; font-size: 16px; font-weight: 600; color: #fff; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 8px 16px; border-radius: 8px; margin: 0; }
+.floating-title-overlay .panorama-name { pointer-events: auto; }
 
 .brand-logo-overlay { position: absolute; z-index: 98; pointer-events: auto; max-width: 180px; max-height: 60px; transition: all 0.2s ease; }
 .brand-logo-overlay img { max-height: 48px; max-width: 160px; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }

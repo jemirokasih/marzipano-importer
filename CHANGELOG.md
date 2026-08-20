@@ -5,6 +5,17 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2026-08-20
+
+### Fix & Verification of Exported Package
+
+- **Fix Export Generator Syntax Bug (`getDefaultExportIndexJs`)**:
+  - Removed duplicate leftover hotspot iteration code block that caused `SyntaxError: Unexpected token ')'` in exported `index.js`.
+- **Synchronized Exported DOM Structure & Styles**:
+  - Synchronized `getDefaultExportIndexHtml()` and `getDefaultExportStyleCss()` with top navbar slots (`#navbarLogoSlot`, `#navbarTitleSlot`, `#navbarFullscreenSlot`) and floating overlay slots (`#brandLogoOverlay`, `#floatingTitleOverlay`) so exported tours mirror the preview editor 1:1.
+- **Automated Verification**:
+  - Verified package generation and JavaScript syntax validity (`node -c`) for exported `index.js` with zero errors.
+
 ## [1.8.1] - 2026-08-20
 
 ### Critical Bug Fix
