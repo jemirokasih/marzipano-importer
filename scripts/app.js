@@ -568,7 +568,20 @@
 
   // Setup Event Listeners
   function setupEventListeners() {
-    // Header buttons
+    // Project Dropdown Menu Toggle
+    const projectDropdownToggle = document.getElementById("projectDropdownToggle");
+    const projectDropdownMenu = document.getElementById("projectDropdownMenu");
+    if (projectDropdownToggle && projectDropdownMenu) {
+      projectDropdownToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        projectDropdownMenu.classList.toggle("show");
+      });
+      document.addEventListener("click", () => {
+        projectDropdownMenu.classList.remove("show");
+      });
+    }
+
+    // Header & Dropdown project actions
     if (elements.resetProjectButton) elements.resetProjectButton.addEventListener("click", resetProjectState);
     if (elements.saveProjectButton) elements.saveProjectButton.addEventListener("click", handleManualSave);
     if (elements.saveToFileButton) elements.saveToFileButton.addEventListener("click", saveProjectToFile);
@@ -582,9 +595,6 @@
     elements.helpButton.addEventListener("click", toggleHelp);
 
     // Update buttons
-    if (elements.checkForUpdatesHeaderBtn) {
-      elements.checkForUpdatesHeaderBtn.addEventListener("click", () => checkForUpdates(true));
-    }
     if (elements.checkForUpdatesFooterBtn) {
       elements.checkForUpdatesFooterBtn.addEventListener("click", () => checkForUpdates(true));
     }

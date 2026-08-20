@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### New Feature: GitHub Auto-Update Engine
 
-- **GitHub Release Update Checker & Modal (`checkForUpdates`)**:
-  - Added "Update" button in top navbar & "🔄 Cek Update" button in footer.
-  - Connects to GitHub API (`https://api.github.com/repos/jemirokasih/marzipano-importer/releases/latest`) to check for newer releases.
-  - Displays update modal (`#updateModal`) with release notes, "Download ZIP Terbaru" direct download link, and "Buka GitHub Release" button.
+- **GitHub Release Update Checker Modal (`checkForUpdates`)**:
+  - Added "🔄 Cek Update" button in footer to check for updates on demand.
+  - Connects to GitHub API (`https://api.github.com/repos/jemirokasih/marzipano-importer/releases/latest`) inside popup modal (`#updateModal`).
+  - Automatically displays "🚀 Update Sekarang (Download ZIP)" button and release notes only when a newer release is detected.
+- **Grouped Top Navbar UI / UX (`Project / File` Dropdown)**:
+  - Consolidated 5 separate project action buttons (`Save`, `Load Saved`, `Save File`, `Load File`, `Reset`) into a clean `📁 Proyek / File` dropdown menu.
+  - Streamlined top navbar layout with primary action buttons: `Proyek / File ▾`, `Import`, `Export`, and `Help`.
 
 ## [1.8.4] - 2026-08-21
 

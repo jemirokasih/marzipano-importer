@@ -28,38 +28,45 @@
             </svg>
           </a>
           <span id="saveStatus" class="save-status">💾 Auto-saved</span>
-          <button class="button reset-btn" id="resetProjectButton" title="Reset State / New Project">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
-            </svg>
-            <span class="text">Reset</span>
-          </button>
-          <button class="button save-btn" id="saveProjectButton" title="Save Project to Browser Cache">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/>
-            </svg>
-            <span class="text">Save</span>
-          </button>
-          <button class="button save-file-btn" id="saveToFileButton" title="Save Project to File (.json)">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
-            </svg>
-            <span class="text">Save File</span>
-          </button>
-          <button class="button load-file-btn" id="loadFileButton" title="Load Project from File (.json)">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M9,16h6v-6h4l-7-7-7,7h4v6zm-4,2h14v2H5v-2z"/>
-            </svg>
-            <span class="text">Load File</span>
-          </button>
+          <!-- Project Actions Dropdown -->
+          <div class="dropdown" id="projectDropdown">
+            <button class="button project-dropdown-btn" id="projectDropdownToggle" title="Menu Proyek & File">
+              <svg class="icon" viewBox="0 0 24 24">
+                <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+              </svg>
+              <span class="text">Proyek / File</span>
+              <svg class="icon" viewBox="0 0 24 24" style="width: 12px; height: 12px; margin-left: 2px;">
+                <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" id="projectDropdownMenu">
+              <button class="dropdown-item" id="saveProjectButton">
+                <svg class="icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#2ba9df" d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/></svg>
+                Simpan ke Cache Browser
+              </button>
+              <button class="dropdown-item" id="loadProjectButton">
+                <svg class="icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#2ba9df" d="M19,20H5V4H7V7H17V4H19M12,12A3,3 0 0,1 15,15A3,3 0 0,1 12,18A3,3 0 0,1 9,15A3,3 0 0,1 12,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/></svg>
+                Muat dari Cache Browser
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="saveToFileButton">
+                <svg class="icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#2ba9df" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>
+                Simpan File (.json)
+              </button>
+              <button class="dropdown-item" id="loadFileButton">
+                <svg class="icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#2ba9df" d="M9,16h6v-6h4l-7-7-7,7h4v6zm-4,2h14v2H5v-2z"/></svg>
+                Buka File (.json)
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="resetProjectButton" style="color: #ff6b6b;">
+                <svg class="icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#ff6b6b" d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/></svg>
+                Reset / Proyek Baru
+              </button>
+            </div>
+          </div>
           <input type="file" id="loadFileInput" accept=".json,.marzipano.json" style="display:none;" />
-          <button class="button load-btn" id="loadProjectButton" title="Load Saved Project from Browser Cache">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M19,20H5V4H7V7H17V4H19M12,12A3,3 0 0,1 15,15A3,3 0 0,1 12,18A3,3 0 0,1 9,15A3,3 0 0,1 12,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-            </svg>
-            <span class="text">Load Saved</span>
-          </button>
-          <button class="button" id="importButton">
+
+          <button class="button" id="importButton" title="Import Tour ZIP">
             <svg class="icon" viewBox="0 0 24 24">
               <path
                 d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,19L8,15H10.5V12H13.5V15H16L12,19Z"
@@ -67,7 +74,7 @@
             </svg>
             <span class="text">Import</span>
           </button>
-          <button class="button export" id="exportButton">
+          <button class="button export" id="exportButton" title="Export Tour Package">
             <span class="text">Export</span>
             <svg class="icon" viewBox="0 0 24 24">
               <path
@@ -75,13 +82,7 @@
               />
             </svg>
           </button>
-          <button class="button update-btn" id="checkForUpdatesHeaderBtn" title="Cek Pembaruan dari GitHub">
-            <svg class="icon" viewBox="0 0 24 24">
-              <path d="M21,10.12H14.22L16.96,7.38C15.68,6.1 13.93,5.32 12,5.32C8.31,5.32 5.32,8.31 5.32,12C5.32,15.69 8.31,18.68 12,18.68C15.25,18.68 17.97,16.34 18.55,13.25H20.59C19.98,17.46 16.36,20.68 12,20.68C7.21,20.68 3.32,16.79 3.32,12C3.32,7.21 7.21,3.32 12,3.32C14.4,3.32 16.58,4.3 18.17,5.88L21,3V10.12Z"/>
-            </svg>
-            <span class="text">Update</span>
-          </button>
-          <button class="button helpButton" id="helpButton">
+          <button class="button helpButton" id="helpButton" title="Bantuan / FAQ">
             <svg class="icon" viewBox="0 0 24 24">
               <path
                 d="M11,18H13V16H11V18M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,6A4,4 0 0,0 8,10H10A2,2 0 0,1 12,8A2,2 0 0,1 14,10C14,12 11,11.75 11,15H13C13,12.75 16,12.5 16,10A4,4 0 0,0 12,6Z"
