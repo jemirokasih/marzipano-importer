@@ -104,6 +104,8 @@
     themeBgColor: document.getElementById("themeBgColor"),
     themeFontColor: document.getElementById("themeFontColor"),
     themeActiveBgColor: document.getElementById("themeActiveBgColor"),
+    themeActiveItemBg: document.getElementById("themeActiveItemBg"),
+    themeActiveItemFontColor: document.getElementById("themeActiveItemFontColor"),
     themeFontSize: document.getElementById("themeFontSize"),
     themeBorderRadius: document.getElementById("themeBorderRadius"),
     themePadding: document.getElementById("themePadding"),
@@ -452,6 +454,8 @@
     if (elements.themeBgColor) elements.themeBgColor.addEventListener("input", updateSettings);
     if (elements.themeFontColor) elements.themeFontColor.addEventListener("input", updateSettings);
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.addEventListener("input", updateSettings);
+    if (elements.themeActiveItemBg) elements.themeActiveItemBg.addEventListener("input", updateSettings);
+    if (elements.themeActiveItemFontColor) elements.themeActiveItemFontColor.addEventListener("input", updateSettings);
     if (elements.themeFontSize) elements.themeFontSize.addEventListener("input", updateSettings);
     if (elements.themeBorderRadius) elements.themeBorderRadius.addEventListener("input", updateSettings);
     if (elements.themePadding) elements.themePadding.addEventListener("input", updateSettings);
@@ -732,6 +736,8 @@
     if (elements.themeBgColor) elements.themeBgColor.value = settings.themeBgColor || "#000000";
     if (elements.themeFontColor) elements.themeFontColor.value = settings.themeFontColor || "#ffffff";
     if (elements.themeActiveBgColor) elements.themeActiveBgColor.value = settings.themeActiveBgColor || "#2ba9df";
+    if (elements.themeActiveItemBg) elements.themeActiveItemBg.value = settings.themeActiveItemBg || "#2ba9df";
+    if (elements.themeActiveItemFontColor) elements.themeActiveItemFontColor.value = settings.themeActiveItemFontColor || "#ffffff";
     if (elements.themeFontSize) elements.themeFontSize.value = settings.themeFontSize || 14;
     if (elements.themeBorderRadius) elements.themeBorderRadius.value = settings.themeBorderRadius || 8;
     if (elements.themePadding) elements.themePadding.value = settings.themePadding || 8;
@@ -742,6 +748,8 @@
     root.style.setProperty("--theme-bg-color", settings.themeBgColor || "#000000");
     root.style.setProperty("--theme-font-color", settings.themeFontColor || "#ffffff");
     root.style.setProperty("--theme-active-color", settings.themeActiveBgColor || "#2ba9df");
+    root.style.setProperty("--theme-active-item-bg", settings.themeActiveItemBg || "#2ba9df");
+    root.style.setProperty("--theme-active-item-font-color", settings.themeActiveItemFontColor || "#ffffff");
     root.style.setProperty("--theme-font-size", (settings.themeFontSize || 14) + "px");
     root.style.setProperty("--theme-border-radius", (settings.themeBorderRadius || 8) + "px");
     root.style.setProperty("--theme-padding", (settings.themePadding || 8) + "px");
@@ -2248,6 +2256,8 @@
       showSceneTitle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
       themeBgColor: elements.themeBgColor ? elements.themeBgColor.value : "#000000",
       themeFontColor: elements.themeFontColor ? elements.themeFontColor.value : "#ffffff",
+      themeActiveItemBg: elements.themeActiveItemBg ? elements.themeActiveItemBg.value : "#2ba9df",
+      themeActiveItemFontColor: elements.themeActiveItemFontColor ? elements.themeActiveItemFontColor.value : "#ffffff",
       themeFontSize: elements.themeFontSize ? parseInt(elements.themeFontSize.value, 10) || 14 : 14,
       themeBorderRadius: elements.themeBorderRadius ? parseInt(elements.themeBorderRadius.value, 10) || 8 : 8,
       themePadding: elements.themePadding ? parseInt(elements.themePadding.value, 10) || 8 : 8,
@@ -3180,8 +3190,12 @@
     items.forEach(function(li) {
       if (li.getAttribute("data-id") === targetScene.data.id) {
         li.classList.add("active");
+        if (settings.themeActiveItemBg) li.style.backgroundColor = settings.themeActiveItemBg;
+        if (settings.themeActiveItemFontColor) li.style.color = settings.themeActiveItemFontColor;
       } else {
         li.classList.remove("active");
+        li.style.backgroundColor = "";
+        li.style.color = "";
       }
     });
   }
@@ -3327,7 +3341,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
 .scene-list-container.collapsed { display: none; }
 .scene-list-container ul { list-style: none; margin: 0; padding: 0; }
 .scene-list-container li { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 13px; margin-bottom: 4px; background: rgba(255, 255, 255, 0.08); transition: background 0.15s ease; white-space: nowrap; }
-.scene-list-container li:hover, .scene-list-container li.active { background: rgba(43, 169, 223, 0.8); }
+.scene-list-container li:hover { background: rgba(255, 255, 255, 0.2); }
+.scene-list-container li.active { background: #2ba9df; color: #ffffff; font-weight: 600; }
 
 .hotspot { position: absolute; cursor: pointer; }
 .link-hotspot .link-icon { background: rgba(0, 0, 0, 0.55); border-radius: 50%; padding: 6px; border: 2px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; transition: transform 0.2s ease, background 0.2s ease; }

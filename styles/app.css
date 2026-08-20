@@ -1445,9 +1445,14 @@ textarea.input-field {
   white-space: nowrap;
 }
 
-.scene-list-preview-container li:hover,
-.scene-list-preview-container li.active {
+.scene-list-preview-container li:hover {
   background: var(--theme-active-color, #2ba9df);
+}
+
+.scene-list-preview-container li.active {
+  background: var(--theme-active-item-bg, #2ba9df) !important;
+  color: var(--theme-active-item-font-color, #ffffff) !important;
+  font-weight: 600;
 }
 
 /* Info Hotspot Link */
