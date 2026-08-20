@@ -216,6 +216,9 @@
                     </button>
                     <button type="button" class="button-secondary" id="removeLogoBtn" style="font-size: 12px; height: 32px; display: none; color: #ff6b6b;">Remove</button>
                   </div>
+                  <div style="font-size: 11px; color: #aaa; margin-top: 4px; line-height: 1.35; background: rgba(255,255,255,0.04); padding: 6px 8px; border-radius: 4px; border: 1px dashed rgba(255,255,255,0.15);">
+                    💡 <strong>Rekomendasi Logo:</strong> Gunakan format PNG transparan (maksimal dimensi 200x60px). Logo akan otomatis di-scale down agar proporsional.
+                  </div>
                 </div>
               </div>
             </div>
@@ -234,26 +237,52 @@
               </div>
               <div class="accordion-body" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
 
-                <!-- Section 1: Visibility & Layout -->
+                <!-- Section 1: Navbar, Logo & Title Placement -->
                 <div class="ui-group" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 6px;">
-                  <div style="font-size: 11px; font-weight: 700; color: #2ba9df; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">1. Visibility & Overlay Position</div>
-                  <div class="setting" style="display: flex; gap: 12px; margin-bottom: 6px;">
+                  <div style="font-size: 11px; font-weight: 700; color: #2ba9df; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">1. Navbar, Logo & Title Placement</div>
+                  <div class="setting" style="display: flex; gap: 12px; margin-bottom: 8px;">
                     <label class="setting-choice" style="cursor: pointer;">
                       <input type="checkbox" id="showHeaderToggle" class="input" checked />
                       <svg class="icon enable"><use href="#checkbox-on-icon"></use></svg>
                       <svg class="icon disable"><use href="#checkbox-off-icon"></use></svg>
-                      <span class="text">Show Header</span>
+                      <span class="text">Show Navbar (Top Bar)</span>
                     </label>
                     <label class="setting-choice" style="cursor: pointer;">
                       <input type="checkbox" id="showSceneTitleToggle" class="input" checked />
                       <svg class="icon enable"><use href="#checkbox-on-icon"></use></svg>
                       <svg class="icon disable"><use href="#checkbox-off-icon"></use></svg>
-                      <span class="text">Show Title Bar</span>
+                      <span class="text">Show Title</span>
                     </label>
                   </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <div>
+                      <label style="font-size: 11px; color: #ccc; display: block; margin-bottom: 3px;">Logo Position:</label>
+                      <select id="themeLogoPos" class="input-field" style="width: 100%; padding: 4px 6px; font-size: 12px;">
+                        <option value="navbar" selected>Navbar Top Bar</option>
+                        <option value="top-left">Overlay Top Left</option>
+                        <option value="top-right">Overlay Top Right</option>
+                        <option value="bottom-left">Overlay Bottom Left</option>
+                        <option value="bottom-right">Overlay Bottom Right</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style="font-size: 11px; color: #ccc; display: block; margin-bottom: 3px;">Title Position:</label>
+                      <select id="themeTitlePos" class="input-field" style="width: 100%; padding: 4px 6px; font-size: 12px;">
+                        <option value="navbar" selected>Navbar Top Bar</option>
+                        <option value="top-center">Overlay Top Center</option>
+                        <option value="top-left">Overlay Top Left</option>
+                        <option value="top-right">Overlay Top Right</option>
+                        <option value="bottom-left">Overlay Bottom Left (Pojok Kiri Bawah)</option>
+                        <option value="bottom-center">Overlay Bottom Center</option>
+                        <option value="bottom-right">Overlay Bottom Right</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <label style="font-size: 11px; color: #ccc;">Control Overlay Position:</label>
-                    <select id="themeControlPos" class="input-field" style="width: 100%; padding: 5px; font-size: 12px;">
+                    <label style="font-size: 11px; color: #ccc;">Control Overlay Position (D-Pad):</label>
+                    <select id="themeControlPos" class="input-field" style="width: 100%; padding: 4px 6px; font-size: 12px;">
                       <option value="bottom-right" selected>Bottom Right</option>
                       <option value="bottom-left">Bottom Left</option>
                       <option value="top-right">Top Right</option>
@@ -388,11 +417,23 @@
         <div id="workspace">
           <!-- Preview Area -->
           <div class="preview visible" id="preview">
-            <div class="panorama-name" id="panoramaName">Select a panorama</div>
             <div class="preview-area" id="previewArea">
               <div id="pano"></div>
 
-              <!-- Brand Logo Overlay -->
+              <!-- Top Navbar Bar (Header) -->
+              <div id="topNavbar" class="top-navbar-bar" style="display: none;">
+                <div id="navbarLogoSlot" class="navbar-slot left-slot"></div>
+                <div id="navbarTitleSlot" class="navbar-slot center-slot">
+                  <div class="panorama-name" id="panoramaName">Select a panorama</div>
+                </div>
+              </div>
+
+              <!-- Floating Title Overlay -->
+              <div id="floatingTitleOverlay" class="floating-title-overlay" style="display: none;">
+                <div class="panorama-name" id="floatingPanoramaName">Select a panorama</div>
+              </div>
+
+              <!-- Brand Logo Overlay (Floating) -->
               <div id="brandLogoOverlay" class="brand-logo-overlay" style="display: none;">
                 <img id="brandLogoImg" src="" alt="Brand Logo" />
               </div>
@@ -701,7 +742,7 @@
           <span class="footer-separator">|</span>
           <span><a href="https://github.com/jemirokasih/marzipano-importer" target="_blank" style="color: #2ba9df; text-decoration: none;">GitHub Repository</a></span>
           <span class="footer-separator">•</span>
-          <span class="version-tag" style="background: rgba(43, 169, 223, 0.2); border: 1px solid #2ba9df; color: #2ba9df; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">v1.5.0</span>
+          <span class="version-tag" style="background: rgba(43, 169, 223, 0.2); border: 1px solid #2ba9df; color: #2ba9df; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">v1.6.0</span>
           <span class="footer-separator">•</span>
           <span>Powered by <a href="https://www.marzipano.net/" target="_blank" style="color: #2ba9df; text-decoration: none;">Marzipano</a></span>
           <span class="footer-separator">•</span>

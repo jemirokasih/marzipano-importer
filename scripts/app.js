@@ -101,6 +101,8 @@
 
     showHeaderToggle: document.getElementById("showHeaderToggle"),
     showSceneTitleToggle: document.getElementById("showSceneTitleToggle"),
+    themeLogoPos: document.getElementById("themeLogoPos"),
+    themeTitlePos: document.getElementById("themeTitlePos"),
     themeSceneTitleBgColor: document.getElementById("themeSceneTitleBgColor"),
     themeSceneTitleFontColor: document.getElementById("themeSceneTitleFontColor"),
     themeSceneTitleFontSize: document.getElementById("themeSceneTitleFontSize"),
@@ -116,6 +118,12 @@
     themeBorderRadius: document.getElementById("themeBorderRadius"),
     themePadding: document.getElementById("themePadding"),
     themeControlPos: document.getElementById("themeControlPos"),
+
+    topNavbar: document.getElementById("topNavbar"),
+    navbarLogoSlot: document.getElementById("navbarLogoSlot"),
+    navbarTitleSlot: document.getElementById("navbarTitleSlot"),
+    floatingTitleOverlay: document.getElementById("floatingTitleOverlay"),
+    floatingPanoramaName: document.getElementById("floatingPanoramaName"),
 
     toggleSceneListBtn: document.getElementById("toggleSceneListBtn"),
     sceneListPreviewContainer: document.getElementById("sceneListPreviewContainer"),
@@ -457,6 +465,8 @@
     // UI/UX Styling Settings
     if (elements.showHeaderToggle) elements.showHeaderToggle.addEventListener("change", updateSettings);
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.addEventListener("change", updateSettings);
+    if (elements.themeLogoPos) elements.themeLogoPos.addEventListener("change", updateSettings);
+    if (elements.themeTitlePos) elements.themeTitlePos.addEventListener("change", updateSettings);
     if (elements.themeSceneTitleBgColor) elements.themeSceneTitleBgColor.addEventListener("input", updateSettings);
     if (elements.themeSceneTitleFontColor) elements.themeSceneTitleFontColor.addEventListener("input", updateSettings);
     if (elements.themeSceneTitleFontSize) elements.themeSceneTitleFontSize.addEventListener("input", updateSettings);
@@ -850,29 +860,96 @@
       }
     }
 
-    // 5. Header & Scene Title Visibility & Custom Styling (panorama-name)
-    if (elements.panoramaName) {
-      elements.panoramaName.style.display = settings.showSceneTitle !== false ? "flex" : "none";
-      elements.panoramaName.style.backgroundColor = settings.themeSceneTitleBgColor || "#000000";
-      elements.panoramaName.style.color = settings.themeSceneTitleFontColor || "#ffffff";
-      elements.panoramaName.style.fontSize = titleFontSize + "px";
-      elements.panoramaName.style.borderRadius = borderRadius + "px";
+    // 5. Navbar (Header Bar) Visibility
+    const isNavbarEnabled = settings.showHeader !== false;
+    if (elements.topNavbar) {
+      elements.topNavbar.style.display = isNavbarEnabled ? "flex" : "none";
+      elements.topNavbar.style.backgroundColor = (settings.themeBgColor || "#000000") + "e6";
+      elements.topNavbar.style.color = settings.themeFontColor || "#ffffff";
     }
 
-    // 6. Brand Logo Overlay
+    // 6. Brand Logo Placement & Proportional Scaling
     const logoUrl = settings.logoUrl;
-    if (elements.brandLogoOverlay && elements.brandLogoImg) {
-      if (logoUrl && settings.showHeader !== false) {
-        elements.brandLogoImg.src = logoUrl;
+    const logoPos = settings.themeLogoPos || "navbar";
+    
+    if (elements.navbarLogoSlot) elements.navbarLogoSlot.innerHTML = "";
+    if (elements.brandLogoOverlay) {
+      elements.brandLogoOverlay.style.display = "none";
+      elements.brandLogoOverlay.style.top = "auto";
+      elements.brandLogoOverlay.style.bottom = "auto";
+      elements.brandLogoOverlay.style.left = "auto";
+      elements.brandLogoOverlay.style.right = "auto";
+    }
+
+    if (logoUrl) {
+      if (elements.removeLogoBtn) elements.removeLogoBtn.style.display = "inline-block";
+      const img = document.createElement("img");
+      img.src = logoUrl;
+      img.alt = "Brand Logo";
+      img.style.maxHeight = "40px";
+      img.style.maxWidth = "160px";
+      img.style.width = "auto";
+      img.style.height = "auto";
+      img.style.objectFit = "contain";
+      img.style.flexShrink = "0";
+
+      if (logoPos === "navbar" && isNavbarEnabled && elements.navbarLogoSlot) {
+        elements.navbarLogoSlot.appendChild(img);
+      } else if (elements.brandLogoOverlay) {
+        elements.brandLogoOverlay.innerHTML = "";
+        elements.brandLogoOverlay.appendChild(img);
         elements.brandLogoOverlay.style.display = "block";
-        if (elements.removeLogoBtn) elements.removeLogoBtn.style.display = "inline-block";
-      } else {
-        elements.brandLogoOverlay.style.display = "none";
-        if (elements.removeLogoBtn) elements.removeLogoBtn.style.display = logoUrl ? "inline-block" : "none";
+        const pos = logoPos.startsWith("overlay-") ? logoPos.replace("overlay-", "") : logoPos;
+        elements.brandLogoOverlay.style.top = pos.includes("top") ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+        elements.brandLogoOverlay.style.bottom = pos.includes("bottom") ? "20px" : "auto";
+        elements.brandLogoOverlay.style.left = pos.includes("left") ? "20px" : "auto";
+        elements.brandLogoOverlay.style.right = pos.includes("right") ? "20px" : "auto";
+      }
+    } else {
+      if (elements.removeLogoBtn) elements.removeLogoBtn.style.display = "none";
+    }
+
+    // 7. Scene Title Placement
+    const isTitleEnabled = settings.showSceneTitle !== false;
+    const titlePos = settings.themeTitlePos || "navbar";
+
+    if (elements.navbarTitleSlot) elements.navbarTitleSlot.style.display = "none";
+    if (elements.floatingTitleOverlay) elements.floatingTitleOverlay.style.display = "none";
+
+    if (isTitleEnabled) {
+      const sceneNameText = state.currentScene ? state.currentScene.name : "Select a panorama";
+      if (titlePos === "navbar" && isNavbarEnabled && elements.navbarTitleSlot) {
+        elements.navbarTitleSlot.style.display = "flex";
+        if (elements.panoramaName) {
+          elements.panoramaName.textContent = sceneNameText;
+          elements.panoramaName.style.display = "flex";
+          elements.panoramaName.style.backgroundColor = settings.themeSceneTitleBgColor || "transparent";
+          elements.panoramaName.style.color = settings.themeSceneTitleFontColor || (settings.themeFontColor || "#ffffff");
+          elements.panoramaName.style.fontSize = titleFontSize + "px";
+          elements.panoramaName.style.borderRadius = borderRadius + "px";
+        }
+      } else if (elements.floatingTitleOverlay && elements.floatingPanoramaName) {
+        elements.floatingTitleOverlay.style.display = "block";
+        elements.floatingPanoramaName.textContent = sceneNameText;
+        elements.floatingPanoramaName.style.display = "flex";
+        elements.floatingPanoramaName.style.backgroundColor = settings.themeSceneTitleBgColor || "#000000";
+        elements.floatingPanoramaName.style.color = settings.themeSceneTitleFontColor || "#ffffff";
+        elements.floatingPanoramaName.style.fontSize = titleFontSize + "px";
+        elements.floatingPanoramaName.style.borderRadius = borderRadius + "px";
+
+        const pos = titlePos.startsWith("overlay-") ? titlePos.replace("overlay-", "") : titlePos;
+        elements.floatingTitleOverlay.style.top = pos.includes("top") ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+        elements.floatingTitleOverlay.style.bottom = pos.includes("bottom") ? "20px" : "auto";
+        elements.floatingTitleOverlay.style.left = pos.includes("left") ? "20px" : (pos.includes("center") ? "50%" : "auto");
+        elements.floatingTitleOverlay.style.right = pos.includes("right") ? "20px" : "auto";
+        elements.floatingTitleOverlay.style.transform = pos.includes("center") ? "translateX(-50%)" : "none";
       }
     }
 
-    // 7. Scene List Container Styling
+    // 8. Scene List Container & Overlay Sidebar Positioning
+    if (elements.sceneListOverlay) {
+      elements.sceneListOverlay.style.top = isNavbarEnabled ? "64px" : "16px";
+    }
     if (elements.sceneListPreviewContainer) {
       elements.sceneListPreviewContainer.style.borderRadius = borderRadius + "px";
       elements.sceneListPreviewContainer.style.padding = padding + "px";
@@ -2298,6 +2375,8 @@
       viewControlButtons: elements.viewControlButtons.checked,
       showHeader: elements.showHeaderToggle ? elements.showHeaderToggle.checked : true,
       showSceneTitle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
+      themeLogoPos: elements.themeLogoPos ? elements.themeLogoPos.value : "navbar",
+      themeTitlePos: elements.themeTitlePos ? elements.themeTitlePos.value : "navbar",
       themeSceneTitleBgColor: elements.themeSceneTitleBgColor ? elements.themeSceneTitleBgColor.value : "#000000",
       themeSceneTitleFontColor: elements.themeSceneTitleFontColor ? elements.themeSceneTitleFontColor.value : "#ffffff",
       themeSceneTitleFontSize: isNaN(parsedTitleSize) ? 16 : parsedTitleSize,
@@ -3214,25 +3293,77 @@
       e.stopPropagation();
       wrapper.classList.toggle("visible");
     });
-    return wrapper;
-  }
+    if (data.linkHotspots) {
+      data.linkHotspots.forEach(function (h) {
+        scene.hotspotContainer().createHotspot(createLinkHotspotElement(h), { yaw: h.yaw, pitch: h.pitch });
+      });
+    }
+
+    if (data.infoHotspots) {
+      data.infoHotspots.forEach(function (h) {
+        scene.hotspotContainer().createHotspot(createInfoHotspotElement(h), { yaw: h.yaw, pitch: h.pitch });
+      });
+    }
+
+    var sceneObj = { data: data, scene: scene, view: view };
+    scenes.push(sceneObj);
+    scenesById[data.id] = sceneObj;
+  });
 
   function findSceneById(id) {
-    for (var i = 0; i < scenes.length; i++) {
-      if (scenes[i].data.id === id) return scenes[i];
-    }
-    return null;
+    return scenesById[id] || null;
   }
 
+  var activeSceneObj = null;
+
   function switchScene(targetScene, overrideInitialView) {
-    if (!targetScene) return;
+    if (settings.autorotateEnabled) {
+      viewer.stopMovement();
+    }
+    targetScene.view.setParameters(targetScene.data.initialViewParameters);
     targetScene.scene.switchTo();
     if (overrideInitialView) {
       targetScene.view.setParameters(overrideInitialView);
     }
     activeSceneObj = targetScene;
-    var titleEl = document.getElementById("exportedSceneTitle");
-    if (titleEl) titleEl.textContent = targetScene.data.name;
+    
+    var isTitleEnabled = settings.showSceneTitle !== false;
+    var titlePos = settings.themeTitlePos || "navbar";
+    var isNavbarEnabled = settings.showHeader !== false;
+
+    var navTitleEl = document.getElementById("navbarSceneTitle");
+    var floatTitleEl = document.getElementById("floatingSceneTitle");
+    var navTitleSlot = document.getElementById("navbarTitleSlot");
+    var floatTitleOverlay = document.getElementById("floatingTitleOverlay");
+
+    if (navTitleSlot) navTitleSlot.style.display = "none";
+    if (floatTitleOverlay) floatTitleOverlay.style.display = "none";
+
+    if (isTitleEnabled) {
+      if (titlePos === "navbar" && isNavbarEnabled && navTitleSlot && navTitleEl) {
+        navTitleEl.textContent = targetScene.data.name;
+        navTitleSlot.style.display = "flex";
+        if (settings.themeSceneTitleBgColor) navTitleEl.style.backgroundColor = settings.themeSceneTitleBgColor;
+        if (settings.themeSceneTitleFontColor) navTitleEl.style.color = settings.themeSceneTitleFontColor;
+        if (settings.themeSceneTitleFontSize !== undefined) navTitleEl.style.fontSize = settings.themeSceneTitleFontSize + "px";
+        if (settings.themeBorderRadius !== undefined) navTitleEl.style.borderRadius = settings.themeBorderRadius + "px";
+      } else if (floatTitleOverlay && floatTitleEl) {
+        floatTitleEl.textContent = targetScene.data.name;
+        floatTitleOverlay.style.display = "block";
+        if (settings.themeSceneTitleBgColor) floatTitleEl.style.backgroundColor = settings.themeSceneTitleBgColor;
+        if (settings.themeSceneTitleFontColor) floatTitleEl.style.color = settings.themeSceneTitleFontColor;
+        if (settings.themeSceneTitleFontSize !== undefined) floatTitleEl.style.fontSize = settings.themeSceneTitleFontSize + "px";
+        if (settings.themeBorderRadius !== undefined) floatTitleEl.style.borderRadius = settings.themeBorderRadius + "px";
+
+        var pos = titlePos.indexOf("overlay-") === 0 ? titlePos.replace("overlay-", "") : titlePos;
+        floatTitleOverlay.style.top = pos.indexOf("top") !== -1 ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+        floatTitleOverlay.style.bottom = pos.indexOf("bottom") !== -1 ? "20px" : "auto";
+        floatTitleOverlay.style.left = pos.indexOf("left") !== -1 ? "20px" : (pos.indexOf("center") !== -1 ? "50%" : "auto");
+        floatTitleOverlay.style.right = pos.indexOf("right") !== -1 ? "20px" : "auto";
+        floatTitleOverlay.style.transform = pos.indexOf("center") !== -1 ? "translateX(-50%)" : "none";
+      }
+    }
+
     updateSceneListActiveUI(targetScene);
   }
 
@@ -3331,7 +3462,7 @@
       if (movementInterval) { clearInterval(movementInterval); movementInterval = null; }
     }
 
-    var controls = [
+    var btnMap = [
       { id: "btnUp", action: "up" },
       { id: "btnDown", action: "down" },
       { id: "btnLeft", action: "left" },
@@ -3340,39 +3471,66 @@
       { id: "btnZoomOut", action: "zoomOut" }
     ];
 
-    controls.forEach(function(item) {
+    btnMap.forEach(function(item) {
       var btn = document.getElementById(item.id);
       if (!btn) return;
       btn.addEventListener("mousedown", function(e) { e.preventDefault(); startMove(item.action); });
-      btn.addEventListener("mouseup", stopMove);
-      btn.addEventListener("mouseleave", stopMove);
+      btn.addEventListener("mouseup", function(e) { e.preventDefault(); stopMove(); });
+      btn.addEventListener("mouseleave", function(e) { e.preventDefault(); stopMove(); });
       btn.addEventListener("touchstart", function(e) { e.preventDefault(); startMove(item.action); });
-      btn.addEventListener("touchend", stopMove);
+      btn.addEventListener("touchend", function(e) { e.preventDefault(); stopMove(); });
       btn.addEventListener("click", function(e) { e.preventDefault(); stepMove(item.action); });
     });
+  }
+
+  var isNavbarEnabled = settings.showHeader !== false;
+  var topNavbar = document.getElementById("topNavbar");
+  if (topNavbar) {
+    topNavbar.style.display = isNavbarEnabled ? "flex" : "none";
+    if (settings.themeBgColor) topNavbar.style.backgroundColor = settings.themeBgColor + "e6";
+    if (settings.themeFontColor) topNavbar.style.color = settings.themeFontColor;
+  }
+
+  var logoPos = settings.themeLogoPos || "navbar";
+  var brandLogoOverlay = document.getElementById("brandLogoOverlay");
+  var navbarLogoSlot = document.getElementById("navbarLogoSlot");
+  var brandLogoImg = document.getElementById("brandLogo");
+
+  if (brandLogoImg) {
+    brandLogoImg.style.maxHeight = "40px";
+    brandLogoImg.style.maxWidth = "160px";
+    brandLogoImg.style.objectFit = "contain";
+    brandLogoImg.style.display = "block";
+
+    if (logoPos === "navbar" && isNavbarEnabled && navbarLogoSlot) {
+      navbarLogoSlot.appendChild(brandLogoImg);
+    } else if (brandLogoOverlay) {
+      brandLogoOverlay.appendChild(brandLogoImg);
+      brandLogoOverlay.style.display = "block";
+      var lPos = logoPos.indexOf("overlay-") === 0 ? logoPos.replace("overlay-", "") : logoPos;
+      brandLogoOverlay.style.top = lPos.indexOf("top") !== -1 ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+      brandLogoOverlay.style.bottom = lPos.indexOf("bottom") !== -1 ? "20px" : "auto";
+      brandLogoOverlay.style.left = lPos.indexOf("left") !== -1 ? "20px" : "auto";
+      brandLogoOverlay.style.right = lPos.indexOf("right") !== -1 ? "20px" : "auto";
+    }
+  }
+
+  var sceneListOverlay = document.getElementById("sceneListOverlay");
+  if (sceneListOverlay) {
+    sceneListOverlay.style.top = isNavbarEnabled ? "64px" : "16px";
   }
 
   var viewControlOverlay = document.getElementById("viewControlOverlay");
   if (viewControlOverlay) {
     viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
     var pos = settings.themeControlPos || "bottom-right";
-    viewControlOverlay.style.top = pos.indexOf("top") !== -1 ? "20px" : "auto";
+    viewControlOverlay.style.top = pos.indexOf("top") !== -1 ? (isNavbarEnabled ? "64px" : "20px") : "auto";
     viewControlOverlay.style.bottom = pos.indexOf("bottom") !== -1 ? "20px" : "auto";
     viewControlOverlay.style.left = pos.indexOf("left") !== -1 ? "20px" : "auto";
     viewControlOverlay.style.right = pos.indexOf("right") !== -1 ? "20px" : "auto";
     if (settings.themeBorderRadius !== undefined) viewControlOverlay.style.borderRadius = settings.themeBorderRadius + "px";
     if (settings.themePadding !== undefined) viewControlOverlay.style.padding = settings.themePadding + "px";
     if (settings.themeBgColor) viewControlOverlay.style.backgroundColor = settings.themeBgColor + "cc";
-  }
-
-  var headerTitleBar = document.getElementById("headerTitleBar");
-  if (headerTitleBar) {
-    if (settings.themeSceneTitleBgColor) headerTitleBar.style.backgroundColor = settings.themeSceneTitleBgColor;
-    if (settings.themeSceneTitleFontColor) headerTitleBar.style.color = settings.themeSceneTitleFontColor;
-    if (settings.themeSceneTitleFontSize !== undefined) {
-      var sceneTitle = document.getElementById("sceneTitle");
-      if (sceneTitle) sceneTitle.style.fontSize = settings.themeSceneTitleFontSize + "px";
-    }
   }
 
   if (sceneListContainer) {
@@ -3394,13 +3552,17 @@
 html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #000; color: #fff; }
 #pano { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-.brand-logo-container { position: absolute; top: 16px; left: 16px; z-index: 100; max-width: 180px; max-height: 80px; }
-.brand-logo-container img { max-width: 100%; max-height: 80px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
+.top-navbar-bar { position: absolute; top: 0; left: 0; width: 100%; height: 52px; background: rgba(0, 0, 0, 0.85); color: #ffffff; backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.top-navbar-bar img { max-height: 40px; max-width: 160px; width: auto; height: auto; object-fit: contain; flex-shrink: 0; }
+.top-navbar-bar .scene-title { font-size: 16px; font-weight: 600; color: inherit; margin: 0; }
 
-.header-title-bar { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 100; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); padding: 8px 20px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); }
-.header-title-bar .scene-title { font-size: 16px; font-weight: 600; color: #fff; margin: 0; text-align: center; }
+.floating-title-overlay { position: absolute; z-index: 99; pointer-events: none; transition: all 0.2s ease; }
+.floating-title-overlay .scene-title { pointer-events: auto; font-size: 16px; font-weight: 600; color: #fff; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); padding: 8px 16px; border-radius: 8px; margin: 0; }
 
-.scene-list-overlay { position: absolute; top: 70px; left: 16px; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.brand-logo-overlay { position: absolute; z-index: 98; pointer-events: auto; max-width: 180px; max-height: 60px; transition: all 0.2s ease; }
+.brand-logo-overlay img { max-height: 48px; max-width: 160px; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
+
+.scene-list-overlay { position: absolute; top: 64px; left: 16px; z-index: 100; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .scene-list-toggle-btn { width: 36px; height: 36px; border: none; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); color: white; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
 .scene-list-toggle-btn:hover { background: rgba(43, 169, 223, 0.85); transform: scale(1.05); }
 

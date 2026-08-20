@@ -5,6 +5,19 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-08-20
+
+### Added & Refactored
+
+- **Top Navbar (Header Bar) Toggle**:
+  - `Show Navbar (Top Bar)` toggle explicitly enables or hides the top navigation bar container (`#topNavbar`).
+- **Flexible Title Placement (`themeTitlePos`)**:
+  - Added option to position scene title in either the Top Navbar or as a floating overlay across 6 selectable positions (Overlay Top Center, Top Left, Top Right, Bottom Left / Pojok Kiri Bawah, Bottom Center, Bottom Right).
+- **Flexible Logo Placement & Proportional Scale Down (`themeLogoPos`)**:
+  - Added option to position brand logo in either the Top Navbar or as a floating overlay across 4 selectable corner positions.
+  - Applied proportional scale-down rules (`max-height: 40px/48px; max-width: 160px; object-fit: contain`) so logos never overflow or distort.
+  - Added recommended dimension guidance helper text in Brand Logo settings.
+
 ## [1.5.0] - 2026-08-20
 
 ### Added & Improved
