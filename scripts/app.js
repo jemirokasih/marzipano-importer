@@ -541,41 +541,41 @@
   function setupViewControlOverlay() {
     let movementInterval = null;
 
-    function startControlMove(action) {
+    function stepControlMove(action) {
       if (!state.scene || !state.scene.view()) return;
-      stopControlMove();
+      const view = state.scene.view();
+      const currentYaw = view.yaw();
+      const currentPitch = view.pitch();
+      const currentFov = view.fov();
 
-      function step() {
-        if (!state.scene || !state.scene.view()) return;
-        const view = state.scene.view();
-        const currentYaw = view.yaw();
-        const currentPitch = view.pitch();
-        const currentFov = view.fov();
-
-        switch (action) {
-          case "up":
-            view.setPitch(currentPitch + 0.03);
-            break;
-          case "down":
-            view.setPitch(currentPitch - 0.03);
-            break;
-          case "left":
-            view.setYaw(currentYaw - 0.03);
-            break;
-          case "right":
-            view.setYaw(currentYaw + 0.03);
-            break;
-          case "zoomIn":
-            view.setFov(currentFov * 0.96);
-            break;
-          case "zoomOut":
-            view.setFov(currentFov * 1.04);
-            break;
-        }
+      switch (action) {
+        case "up":
+          view.setPitch(currentPitch + 0.05);
+          break;
+        case "down":
+          view.setPitch(currentPitch - 0.05);
+          break;
+        case "left":
+          view.setYaw(currentYaw - 0.06);
+          break;
+        case "right":
+          view.setYaw(currentYaw + 0.06);
+          break;
+        case "zoomIn":
+          view.setFov(currentFov * 0.85);
+          break;
+        case "zoomOut":
+          view.setFov(currentFov * 1.18);
+          break;
       }
+    }
 
-      step();
-      movementInterval = setInterval(step, 30);
+    function startControlMove(action) {
+      stopControlMove();
+      stepControlMove(action);
+      movementInterval = setInterval(() => {
+        stepControlMove(action);
+      }, 50);
     }
 
     function stopControlMove() {
@@ -614,6 +614,10 @@
         startControlMove(action);
       });
       btn.addEventListener("touchend", stopControlMove);
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        stepControlMove(action);
+      });
     });
 
     // Fullscreen Toggle
@@ -690,13 +694,11 @@
       }
     }
 
-    // 2. Autorotate
+    // 2. Autorotate (rotate yaw only so manual pitch and zoom FOV are not reset)
     if (autorotateEnabled) {
       if (!autorotateMovement && typeof Marzipano !== "undefined" && Marzipano.autorotate) {
         autorotateMovement = Marzipano.autorotate({
           yawSpeed: 0.03, // approx 1.7 deg/sec
-          targetPitch: 0,
-          targetFov: Math.PI / 2,
         });
       }
       if (autorotateMovement) {
