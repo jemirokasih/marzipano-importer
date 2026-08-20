@@ -5,6 +5,15 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-08-20
+
+### Fixed & Revised
+
+- **Active Button Color Setting (`themeActiveBgColor`)**: Added Active Color picker to UI/UX customization settings for highlighting active scene items, hovered buttons, and active controls.
+- **Live Theme Customization Sync**: Fixed live updates for font size (`--theme-font-size`), border radius (`--theme-border-radius`), padding (`--theme-padding`), and active color across all viewer controls and sidebar overlays.
+- **Panorama List Scene Visibility Checklist**: Fixed JS event delegation for the "Tampilkan di Scene List" checkbox in the Panorama list sidebar, ensuring live updates of the floating scene list menu.
+- **Link Hotspot Modal Cleanup**: Removed redundant "Show Target Scene in SceneList" checkbox from Add/Edit Link Hotspot modal as requested.
+
 ## [1.3.0] - 2026-08-20
 
 ### Added

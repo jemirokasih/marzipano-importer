@@ -1447,7 +1447,7 @@ textarea.input-field {
 
 .scene-list-preview-container li:hover,
 .scene-list-preview-container li.active {
-  background: rgba(43, 169, 223, 0.8);
+  background: var(--theme-active-color, #2ba9df);
 }
 
 /* Info Hotspot Link */
@@ -1455,7 +1455,7 @@ textarea.input-field {
   display: inline-block;
   margin-top: 8px;
   padding: 5px 10px;
-  background: #2ba9df;
+  background: var(--theme-active-color, #2ba9df);
   color: #fff !important;
   text-decoration: none;
   font-size: 12px;
@@ -1465,7 +1465,7 @@ textarea.input-field {
 }
 
 .info-hotspot-link:hover {
-  background: #1e87b7;
+  filter: brightness(0.85);
 }
 
 

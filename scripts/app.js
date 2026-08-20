@@ -84,7 +84,6 @@
 
     linkHotspotModal: document.getElementById("linkHotspotModal"),
     linkHotspotTarget: document.getElementById("linkHotspotTarget"),
-    linkHotspotShowInSceneList: document.getElementById("linkHotspotShowInSceneList"),
     captureTargetViewBtn: document.getElementById("captureTargetViewBtn"),
     resetTargetViewBtn: document.getElementById("resetTargetViewBtn"),
     targetViewYawInput: document.getElementById("targetViewYawInput"),
@@ -104,6 +103,7 @@
     showSceneTitleToggle: document.getElementById("showSceneTitleToggle"),
     themeBgColor: document.getElementById("themeBgColor"),
     themeFontColor: document.getElementById("themeFontColor"),
+    themeActiveBgColor: document.getElementById("themeActiveBgColor"),
     themeFontSize: document.getElementById("themeFontSize"),
     themeBorderRadius: document.getElementById("themeBorderRadius"),
     themePadding: document.getElementById("themePadding"),
@@ -451,6 +451,7 @@
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.addEventListener("change", updateSettings);
     if (elements.themeBgColor) elements.themeBgColor.addEventListener("input", updateSettings);
     if (elements.themeFontColor) elements.themeFontColor.addEventListener("input", updateSettings);
+    if (elements.themeActiveBgColor) elements.themeActiveBgColor.addEventListener("input", updateSettings);
     if (elements.themeFontSize) elements.themeFontSize.addEventListener("input", updateSettings);
     if (elements.themeBorderRadius) elements.themeBorderRadius.addEventListener("input", updateSettings);
     if (elements.themePadding) elements.themePadding.addEventListener("input", updateSettings);
@@ -725,6 +726,26 @@
       elements.viewControlButtons.checked = !!settings.viewControlButtons;
     }
 
+    // Synchronize UI form inputs
+    if (elements.showHeaderToggle) elements.showHeaderToggle.checked = settings.showHeader !== false;
+    if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.checked = settings.showSceneTitle !== false;
+    if (elements.themeBgColor) elements.themeBgColor.value = settings.themeBgColor || "#000000";
+    if (elements.themeFontColor) elements.themeFontColor.value = settings.themeFontColor || "#ffffff";
+    if (elements.themeActiveBgColor) elements.themeActiveBgColor.value = settings.themeActiveBgColor || "#2ba9df";
+    if (elements.themeFontSize) elements.themeFontSize.value = settings.themeFontSize || 14;
+    if (elements.themeBorderRadius) elements.themeBorderRadius.value = settings.themeBorderRadius || 8;
+    if (elements.themePadding) elements.themePadding.value = settings.themePadding || 8;
+    if (elements.themeControlPos) elements.themeControlPos.value = settings.themeControlPos || "bottom-right";
+
+    // Set Root CSS Custom Variables Live
+    const root = document.documentElement;
+    root.style.setProperty("--theme-bg-color", settings.themeBgColor || "#000000");
+    root.style.setProperty("--theme-font-color", settings.themeFontColor || "#ffffff");
+    root.style.setProperty("--theme-active-color", settings.themeActiveBgColor || "#2ba9df");
+    root.style.setProperty("--theme-font-size", (settings.themeFontSize || 14) + "px");
+    root.style.setProperty("--theme-border-radius", (settings.themeBorderRadius || 8) + "px");
+    root.style.setProperty("--theme-padding", (settings.themePadding || 8) + "px");
+
     if (!state.viewer) return;
 
     // 1. Mouse View Mode (drag vs qtvr)
@@ -777,12 +798,25 @@
       viewControlOverlay.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
     }
 
-    // 4. Header & Scene Title Visibility
-    if (elements.panoramaName) {
-      elements.panoramaName.style.display = settings.showSceneTitle !== false ? "block" : "none";
+    // 4. Fullscreen Button Overlay
+    const fullscreenOverlay = document.getElementById("fullscreenButtonOverlay");
+    if (fullscreenOverlay) {
+      fullscreenOverlay.style.display = settings.fullscreenButton ? "flex" : "none";
+      const btn = fullscreenOverlay.querySelector("button");
+      if (btn) {
+        btn.style.borderRadius = (settings.themeBorderRadius || 8) + "px";
+        btn.style.backgroundColor = (settings.themeBgColor || "#000000") + "cc";
+      }
     }
 
-    // 5. Brand Logo Overlay
+    // 5. Header & Scene Title Visibility & Font Styling
+    if (elements.panoramaName) {
+      elements.panoramaName.style.display = settings.showSceneTitle !== false ? "block" : "none";
+      elements.panoramaName.style.color = settings.themeFontColor || "#ffffff";
+      elements.panoramaName.style.fontSize = (settings.themeFontSize ? settings.themeFontSize + 2 : 16) + "px";
+    }
+
+    // 6. Brand Logo Overlay
     const logoUrl = settings.logoUrl;
     if (elements.brandLogoOverlay && elements.brandLogoImg) {
       if (logoUrl && settings.showHeader !== false) {
@@ -795,7 +829,7 @@
       }
     }
 
-    // 6. Scene List Container Styling
+    // 7. Scene List Container Styling
     if (elements.sceneListPreviewContainer) {
       elements.sceneListPreviewContainer.style.borderRadius = (settings.themeBorderRadius || 8) + "px";
       elements.sceneListPreviewContainer.style.padding = (settings.themePadding || 8) + "px";
@@ -852,15 +886,6 @@
     }
   }
 
-  function toggleSceneListVisibility(index, isChecked) {
-    if (state.tourData.scenes[index]) {
-      state.tourData.scenes[index].showInSceneList = isChecked;
-      renderPanoramaList();
-      saveHistoryState();
-      markAsChanged();
-    }
-  }
-
   // Render Panorama List
   function renderPanoramaList() {
     elements.panoramaList.innerHTML = "";
@@ -882,25 +907,59 @@
         <div class="info">
           <div class="properties">
             <div class="name">${scene.name}</div>
-            <div class="action" onclick="event.stopPropagation(); editSceneName(${index})">
+            <div class="action edit-action">
               <svg class="icon" viewBox="0 0 24 24">
                 <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
               </svg>
             </div>
-            <div class="action" onclick="event.stopPropagation(); deleteScene(${index})">
+            <div class="action delete-action">
               <svg class="icon" viewBox="0 0 24 24">
                 <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
               </svg>
             </div>
           </div>
           <div class="status" style="margin-top: 4px;">
-            <label style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 4px; cursor: pointer;" onclick="event.stopPropagation();">
-              <input type="checkbox" ${showInList ? "checked" : ""} onchange="event.stopPropagation(); toggleSceneListVisibility(${index}, this.checked)" />
+            <label class="scene-show-label" style="font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" class="scene-show-checkbox" ${showInList ? "checked" : ""} style="cursor: pointer;" />
               <span>Tampilkan di Scene List</span>
             </label>
           </div>
         </div>
       `;
+
+      const editBtn = panoramaEl.querySelector(".edit-action");
+      if (editBtn) {
+        editBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          editSceneName(index);
+        });
+      }
+
+      const deleteBtn = panoramaEl.querySelector(".delete-action");
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteScene(index);
+        });
+      }
+
+      const label = panoramaEl.querySelector(".scene-show-label");
+      if (label) {
+        label.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+      }
+
+      const checkbox = panoramaEl.querySelector(".scene-show-checkbox");
+      if (checkbox) {
+        checkbox.addEventListener("change", (e) => {
+          e.stopPropagation();
+          state.tourData.scenes[index].showInSceneList = e.target.checked;
+          renderPanoramaList();
+          saveHistoryState();
+          markAsChanged();
+        });
+      }
 
       // Setup drag and drop
       setupPanoramaDrag(panoramaEl, index);
@@ -2454,14 +2513,6 @@
       }
       state.currentScene.linkHotspots.push(hotspot);
       markAsChanged();
-    }
-
-    // Update target scene showInSceneList setting based on checkbox
-    if (target && elements.linkHotspotShowInSceneList) {
-      const targetSceneObj = state.tourData.scenes.find((s) => s.id === target);
-      if (targetSceneObj) {
-        targetSceneObj.showInSceneList = elements.linkHotspotShowInSceneList.checked;
-      }
     }
 
     // Reset pending states
