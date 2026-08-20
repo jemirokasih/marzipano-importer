@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix UI / UX Customization Accordion Toggle**:
   - Removed inline `style="display: flex;"` from `<div class="accordion-content">` which previously overrode CSS `.accordion-content { display: none; }` when collapsed.
   - Added `.ui-ux-accordion.expand .accordion-content` CSS rule so panel expands/collapses cleanly when clicked.
+- **Vertical Layout for Show Navbar & Show Title Checkboxes**:
+  - Updated container styling to `flex-direction: column` so checkboxes align in a vertical list for better readability.
 
 ## [1.8.3] - 2026-08-20
 
