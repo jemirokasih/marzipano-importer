@@ -2813,6 +2813,7 @@
 
 <script src="vendor/marzipano.js"></script>
 <script src="app-files/data.js"></script>
+<script src="data.js"></script>
 <script src="index.js"></script>
 
 </body>
@@ -2825,6 +2826,11 @@
 
   var Marzipano = window.Marzipano;
   var APP_DATA = window.APP_DATA;
+
+  if (!APP_DATA || !APP_DATA.scenes || !APP_DATA.scenes.length) {
+    console.error("No APP_DATA or scenes found");
+    return;
+  }
 
   var panoElement = document.querySelector("#pano");
   var settings = APP_DATA.settings || {};
@@ -2839,9 +2845,40 @@
 
   var scenes = APP_DATA.scenes.map(function (data) {
     var urlPrefix = "tiles";
-    var source = Marzipano.ImageUrlSource.fromString(
-      urlPrefix + "/" + data.id + "/{z}/{f}/{y}/{x}.jpg"
+    var source = new Marzipano.ImageUrlSource(function (tile) {
+      if (tile.z === 0) {
+        return { url: urlPrefix + "/" + data.id + "/0/" + tile.face + "/0/0.jpg" };
+      }
+      return {
+        url: urlPrefix + "/" + data.id + "/" + tile.z + "/" + tile.face + "/" + tile.y + "/" + tile.x + ".jpg"
+      };
+    });
+
+    var limiter = Marzipano.RectilinearView.limit.traditional(
+      data.faceSize || 4096,
+      (100 * Math.PI) / 180,
+      (10 * Math.PI) / 180
     );
+    var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
+    var scene = viewer.createScene({
+      source: source,
+      geometry: new Marzipano.CubeGeometry(data.levels),
+      view: view,
+      pinFirstLevel: true
+    });
+
+    (data.linkHotspots || []).forEach(function (hotspot) {
+      var element = createLinkHotspotElement(hotspot);
+      scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
+    });
+
+    (data.infoHotspots || []).forEach(function (hotspot) {
+      var element = createInfoHotspotElement(hotspot);
+      scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
+    });
+
+    return { data: data, scene: scene, view: view };
+  });
     var limiter = Marzipano.RectilinearView.limit.traditional(
       data.faceSize || 4096,
       (100 * Math.PI) / 180,
@@ -3215,7 +3252,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
     const exportLevels = createExportLevels(maxFaceSize);
     const faceOrder = ["f", "b", "l", "r", "u", "d"];
 
-    for (let i = 1; i < exportLevels.length; i++) {
+    for (let i = 0; i < exportLevels.length; i++) {
       const level = exportLevels[i];
 
       for (const face of faceOrder) {
@@ -3326,6 +3363,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
       ? `${dataDirParts.join("/")}/index.html`
       : "index.html";
 
+    zip.file("data.js", dataContent);
+    zip.file("app-files/data.js", dataContent);
     zip.file(archiveConfig.dataFilePath, dataContent);
 
     if (archiveConfig.preservedFiles && archiveConfig.preservedFiles[indexHtmlPath]) {
