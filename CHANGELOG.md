@@ -5,6 +5,21 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-20
+
+### Added
+
+- **UI / UX Style Customization Panel**:
+  - Color Pickers: Background Color (`themeBgColor`) & Font Color (`themeFontColor`).
+  - Font Size (`themeFontSize`), Padding (`themePadding`), & Border Radius (`themeBorderRadius`) controls.
+  - Control Overlay Positioning (`themeControlPos`: Bottom Right, Bottom Left, Top Right, Top Left).
+- **Header & Scene Title Visibility Toggles**:
+  - `Show Header` toggle: Show/hide brand logo and title bar.
+  - `Show Scene Title` toggle: Show/hide current panorama scene name.
+- **Link Hotspot SceneList Visibility Checkbox**:
+  - Added `Show Target Scene in SceneList` checkbox inside the "Add/Edit Link Hotspot" modal window.
+  - Toggling this checkbox dynamically sets whether the target scene appears in the sidebar list.
+
 ## [1.2.0] - 2026-08-20
 
 ### Added & Fixed (100% Editor to Webserver Export Parity)
