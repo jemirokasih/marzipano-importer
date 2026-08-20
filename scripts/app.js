@@ -139,6 +139,12 @@
     exportModal: document.getElementById("exportModal"),
     exportProgress: document.getElementById("exportProgress"),
     exportStatus: document.getElementById("exportStatus"),
+
+    checkForUpdatesHeaderBtn: document.getElementById("checkForUpdatesHeaderBtn"),
+    checkForUpdatesFooterBtn: document.getElementById("checkForUpdatesFooterBtn"),
+    updateModal: document.getElementById("updateModal"),
+    closeUpdateModalX: document.getElementById("closeUpdateModalX"),
+    cancelUpdateModalBtn: document.getElementById("cancelUpdateModalBtn"),
   };
 
   // IndexedDB Storage Engine
@@ -369,6 +375,125 @@
     }
   }
 
+  // GitHub Auto-Update Engine
+  const APP_VERSION = "v1.9.0";
+  const GITHUB_REPO_OWNER = "jemirokasih";
+  const GITHUB_REPO_NAME = "marzipano-importer";
+
+  function parseVersion(vStr) {
+    if (!vStr) return [0, 0, 0];
+    const cleaned = vStr.replace(/^v/i, "").trim();
+    return cleaned.split(".").map((x) => parseInt(x, 10) || 0);
+  }
+
+  function compareVersions(v1, v2) {
+    const p1 = parseVersion(v1);
+    const p2 = parseVersion(v2);
+    for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+      const num1 = p1[i] || 0;
+      const num2 = p2[i] || 0;
+      if (num1 > num2) return 1;
+      if (num1 < num2) return -1;
+    }
+    return 0;
+  }
+
+  async function checkForUpdates(isManualClick = false) {
+    const statusEl = document.getElementById("updateModalStatus");
+    const bodyEl = document.getElementById("updateModalBody");
+    const downloadBtn = document.getElementById("downloadReleaseBtn");
+    const viewBtn = document.getElementById("viewReleaseBtn");
+
+    if (isManualClick) {
+      showModal("updateModal");
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div style="padding: 10px; color: #2ba9df; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <span>⌛ Memeriksa pembaruan dari GitHub (${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME})...</span>
+          </div>`;
+      }
+      if (bodyEl) bodyEl.style.display = "none";
+      if (downloadBtn) downloadBtn.style.display = "none";
+      if (viewBtn) viewBtn.style.display = "none";
+    }
+
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases/latest`,
+        {
+          headers: { Accept: "application/vnd.github.v3+json" },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: Tidak dapat terhubung ke rilis GitHub`);
+      }
+
+      const release = await res.json();
+      const latestTag = release.tag_name || APP_VERSION;
+      const isNewer = compareVersions(latestTag, APP_VERSION) > 0;
+
+      if (isNewer) {
+        if (statusEl) {
+          statusEl.innerHTML = `
+            <div style="background: rgba(43, 169, 223, 0.15); border: 1px solid #2ba9df; color: #ffffff; padding: 10px 12px; border-radius: 6px; font-size: 13px; line-height: 1.5;">
+              🎉 <strong>Versi Baru Tersedia: ${latestTag}</strong><br>
+              <span style="font-size: 11px; color: #aaa;">Versi Anda saat ini: <strong>${APP_VERSION}</strong></span>
+            </div>`;
+        }
+
+        if (bodyEl && release.body) {
+          bodyEl.textContent = release.body;
+          bodyEl.style.display = "block";
+        }
+
+        if (downloadBtn) {
+          downloadBtn.href =
+            release.zipball_url ||
+            `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/archive/refs/tags/${latestTag}.zip`;
+          downloadBtn.style.display = "inline-flex";
+        }
+
+        if (viewBtn) {
+          viewBtn.href =
+            release.html_url ||
+            `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases/latest`;
+          viewBtn.style.display = "inline-flex";
+        }
+
+        showModal("updateModal");
+      } else {
+        if (isManualClick && statusEl) {
+          statusEl.innerHTML = `
+            <div style="background: rgba(40, 167, 69, 0.15); border: 1px solid #28a745; color: #28a745; padding: 10px 12px; border-radius: 6px; font-size: 13px;">
+              ✅ <strong>Aplikasi Anda Sudah Versi Terbaru (${APP_VERSION})</strong><br>
+              <span style="font-size: 11px; color: #ccc;">Tidak ada pembaruan baru yang ditemukan di repository GitHub.</span>
+            </div>`;
+          if (bodyEl) bodyEl.style.display = "none";
+          if (downloadBtn) downloadBtn.style.display = "none";
+          if (viewBtn) {
+            viewBtn.href = `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases`;
+            viewBtn.style.display = "inline-flex";
+          }
+          showModal("updateModal");
+        }
+      }
+    } catch (err) {
+      if (isManualClick && statusEl) {
+        statusEl.innerHTML = `
+          <div style="background: rgba(220, 53, 69, 0.15); border: 1px solid #dc3545; color: #ff6b6b; padding: 10px 12px; border-radius: 6px; font-size: 13px;">
+            ⚠️ <strong>Gagal Memeriksa Pembaruan</strong><br>
+            <span style="font-size: 11px; color: #ccc;">${err.message}</span>
+          </div>`;
+        if (viewBtn) {
+          viewBtn.href = `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/releases`;
+          viewBtn.style.display = "inline-flex";
+        }
+        showModal("updateModal");
+      }
+    }
+  }
+
   // Initialize
   async function init() {
     setupEventListeners();
@@ -455,6 +580,20 @@
     );
     elements.exportButton.addEventListener("click", exportTour);
     elements.helpButton.addEventListener("click", toggleHelp);
+
+    // Update buttons
+    if (elements.checkForUpdatesHeaderBtn) {
+      elements.checkForUpdatesHeaderBtn.addEventListener("click", () => checkForUpdates(true));
+    }
+    if (elements.checkForUpdatesFooterBtn) {
+      elements.checkForUpdatesFooterBtn.addEventListener("click", () => checkForUpdates(true));
+    }
+    if (elements.closeUpdateModalX) {
+      elements.closeUpdateModalX.addEventListener("click", () => hideModal("updateModal"));
+    }
+    if (elements.cancelUpdateModalBtn) {
+      elements.cancelUpdateModalBtn.addEventListener("click", () => hideModal("updateModal"));
+    }
 
     // Project name
     elements.projectName.addEventListener("input", (e) => {

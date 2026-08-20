@@ -75,6 +75,12 @@
               />
             </svg>
           </button>
+          <button class="button update-btn" id="checkForUpdatesHeaderBtn" title="Cek Pembaruan dari GitHub">
+            <svg class="icon" viewBox="0 0 24 24">
+              <path d="M21,10.12H14.22L16.96,7.38C15.68,6.1 13.93,5.32 12,5.32C8.31,5.32 5.32,8.31 5.32,12C5.32,15.69 8.31,18.68 12,18.68C15.25,18.68 17.97,16.34 18.55,13.25H20.59C19.98,17.46 16.36,20.68 12,20.68C7.21,20.68 3.32,16.79 3.32,12C3.32,7.21 7.21,3.32 12,3.32C14.4,3.32 16.58,4.3 18.17,5.88L21,3V10.12Z"/>
+            </svg>
+            <span class="text">Update</span>
+          </button>
           <button class="button helpButton" id="helpButton">
             <svg class="icon" viewBox="0 0 24 24">
               <path
@@ -772,13 +778,41 @@
           <span class="footer-separator">|</span>
           <span><a href="https://github.com/jemirokasih/marzipano-importer" target="_blank" style="color: #2ba9df; text-decoration: none;">GitHub Repository</a></span>
           <span class="footer-separator">•</span>
-          <span class="version-tag" style="background: rgba(43, 169, 223, 0.2); border: 1px solid #2ba9df; color: #2ba9df; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">v1.8.4</span>
+          <span class="version-tag" style="background: rgba(43, 169, 223, 0.2); border: 1px solid #2ba9df; color: #2ba9df; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">v1.9.0</span>
+          <button type="button" id="checkForUpdatesFooterBtn" style="background: rgba(43, 169, 223, 0.15); border: 1px solid #2ba9df; color: #2ba9df; border-radius: 12px; padding: 2px 8px; font-size: 11px; font-weight: 600; cursor: pointer; margin-left: 4px; transition: background 0.15s ease;" title="Cek Pembaruan dari GitHub">
+            🔄 Cek Update
+          </button>
           <span class="footer-separator">•</span>
           <span>Powered by <a href="https://www.marzipano.net/" target="_blank" style="color: #2ba9df; text-decoration: none;">Marzipano</a></span>
           <span class="footer-separator">•</span>
           <span>Based on <a href="https://github.com/tunnaduong/marzipano-importer" target="_blank" style="color: #2ba9df; text-decoration: none;">Tunna Duong</a></span>
         </div>
       </footer>
+
+      <!-- Update Modal -->
+      <div id="updateModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 540px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            <h2 style="margin: 0; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="#2ba9df">
+                <path d="M21,10.12H14.22L16.96,7.38C15.68,6.1 13.93,5.32 12,5.32C8.31,5.32 5.32,8.31 5.32,12C5.32,15.69 8.31,18.68 12,18.68C15.25,18.68 17.97,16.34 18.55,13.25H20.59C19.98,17.46 16.36,20.68 12,20.68C7.21,20.68 3.32,16.79 3.32,12C3.32,7.21 7.21,3.32 12,3.32C14.4,3.32 16.58,4.3 18.17,5.88L21,3V10.12Z"/>
+              </svg>
+              Pembaruan Aplikasi
+            </h2>
+            <button id="closeUpdateModalX" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">&times;</button>
+          </div>
+
+          <div id="updateModalStatus" style="margin-bottom: 12px;"></div>
+
+          <div id="updateModalBody" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 12px; max-height: 220px; overflow-y: auto; font-size: 12px; color: #ddd; margin-bottom: 15px; display: none; white-space: pre-wrap; font-family: monospace;"></div>
+
+          <div class="modal-buttons" style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button class="button-secondary" id="cancelUpdateModalBtn">Tutup</button>
+            <a id="downloadReleaseBtn" href="#" target="_blank" class="button-primary" style="text-decoration: none; display: none;">⬇️ Download ZIP Terbaru</a>
+            <a id="viewReleaseBtn" href="#" target="_blank" class="button-primary" style="text-decoration: none; display: none;">🌐 Buka GitHub Release</a>
+          </div>
+        </div>
+      </div>
 
       <!-- Import Modal -->
       <div id="importModal" class="modal hidden">

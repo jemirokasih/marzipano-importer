@@ -5,6 +5,15 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-08-21
+
+### New Feature: GitHub Auto-Update Engine
+
+- **GitHub Release Update Checker & Modal (`checkForUpdates`)**:
+  - Added "Update" button in top navbar & "🔄 Cek Update" button in footer.
+  - Connects to GitHub API (`https://api.github.com/repos/jemirokasih/marzipano-importer/releases/latest`) to check for newer releases.
+  - Displays update modal (`#updateModal`) with release notes, "Download ZIP Terbaru" direct download link, and "Buka GitHub Release" button.
+
 ## [1.8.4] - 2026-08-21
 
 ### UI & Interaction Fixes
