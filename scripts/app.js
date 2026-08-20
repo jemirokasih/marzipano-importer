@@ -2760,6 +2760,218 @@
       .join("\n");
   }
 
+  async function fetchLocalMarzipanoJs() {
+    try {
+      const res = await fetch("scripts/marzipano-0.10.2/marzipano.js");
+      if (res.ok) {
+        return await res.text();
+      }
+    } catch (e) {
+      console.warn("Could not fetch local marzipano.js:", e);
+    }
+    return null;
+  }
+
+  function getDefaultExportIndexHtml(exportData) {
+    const tourName = (exportData && exportData.name) || "Mikrotek Virtual Tour";
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>${tourName}</title>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width, shrink-to-fit=no">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="multiple-scenes">
+
+<div id="pano"></div>
+
+<div id="titleBar">
+  <h1 class="sceneName">${tourName}</h1>
+</div>
+
+<div id="sceneList">
+  <ul class="scenes"></ul>
+</div>
+
+<div id="viewControlOverlay" class="view-controls">
+  <div class="dpad">
+    <button id="btnUp" class="ctrl-btn" title="Look Up">▲</button>
+    <button id="btnLeft" class="ctrl-btn" title="Look Left">◀</button>
+    <button id="btnRight" class="ctrl-btn" title="Look Right">▶</button>
+    <button id="btnDown" class="ctrl-btn" title="Look Down">▼</button>
+  </div>
+  <div class="zoom-pad">
+    <button id="btnZoomIn" class="ctrl-btn" title="Zoom In">+</button>
+    <button id="btnZoomOut" class="ctrl-btn" title="Zoom Out">-</button>
+  </div>
+</div>
+
+<div id="fullscreenOverlay">
+  <button id="btnFullscreen" class="ctrl-btn" title="Toggle Fullscreen">⛶</button>
+</div>
+
+<script src="vendor/marzipano.js"></script>
+<script src="app-files/data.js"></script>
+<script src="index.js"></script>
+
+</body>
+</html>`;
+  }
+
+  function getDefaultExportIndexJs() {
+    return `(function () {
+  "use strict";
+
+  var Marzipano = window.Marzipano;
+  var APP_DATA = window.APP_DATA;
+
+  var panoElement = document.querySelector("#pano");
+  var settings = APP_DATA.settings || {};
+
+  var viewerOpts = {
+    controls: {
+      mouseViewMode: settings.mouseViewMode || "drag"
+    }
+  };
+
+  var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
+
+  var scenes = APP_DATA.scenes.map(function (data) {
+    var urlPrefix = "tiles";
+    var source = Marzipano.ImageUrlSource.fromString(
+      urlPrefix + "/" + data.id + "/{z}/{f}/{y}/{x}.jpg"
+    );
+    var limiter = Marzipano.RectilinearView.limit.traditional(
+      data.faceSize || 4096,
+      (100 * Math.PI) / 180,
+      (10 * Math.PI) / 180
+    );
+    var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
+    var scene = viewer.createScene({
+      source: source,
+      geometry: new Marzipano.CubeGeometry(data.levels),
+      view: view,
+      pinFirstLevel: true
+    });
+
+    (data.linkHotspots || []).forEach(function (hotspot) {
+      var element = createLinkHotspotElement(hotspot);
+      scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
+    });
+
+    (data.infoHotspots || []).forEach(function (hotspot) {
+      var element = createInfoHotspotElement(hotspot);
+      scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
+    });
+
+    return { data: data, scene: scene, view: view };
+  });
+
+  function createLinkHotspotElement(hotspot) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "hotspot link-hotspot";
+    var rotation = hotspot.rotation || 0;
+    var totalRotation = -90 + (rotation * 180) / Math.PI;
+    wrapper.innerHTML = '<div class="link-icon" style="transform: rotate(' + totalRotation + 'deg);">' +
+      '<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M16 4 L28 16 L16 28 M28 16 L4 16" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
+      '</svg></div>';
+    
+    wrapper.addEventListener("click", function () {
+      var targetScene = findSceneById(hotspot.target);
+      if (targetScene) {
+        switchScene(targetScene, hotspot.targetView);
+      }
+    });
+    return wrapper;
+  }
+
+  function createInfoHotspotElement(hotspot) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "hotspot info-hotspot";
+    wrapper.innerHTML = '<div class="info-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 12,22A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/></svg></div>' +
+      '<div class="info-text"><h3>' + (hotspot.title || "") + '</h3><p>' + (hotspot.text || "") + '</p></div>';
+    return wrapper;
+  }
+
+  function findSceneById(id) {
+    for (var i = 0; i < scenes.length; i++) {
+      if (scenes[i].data.id === id) return scenes[i];
+    }
+    return null;
+  }
+
+  function switchScene(targetScene, overrideInitialView) {
+    targetScene.scene.switchTo();
+    if (overrideInitialView) {
+      targetScene.view.setParameters(overrideInitialView);
+    }
+    var titleEl = document.querySelector("#titleBar .sceneName");
+    if (titleEl) titleEl.textContent = targetScene.data.name;
+  }
+
+  var sceneListEl = document.querySelector("#sceneList .scenes");
+  if (sceneListEl) {
+    scenes.forEach(function (s) {
+      var li = document.createElement("li");
+      li.textContent = s.data.name;
+      li.addEventListener("click", function () {
+        switchScene(s);
+      });
+      sceneListEl.appendChild(li);
+    });
+  }
+
+  if (settings.autorotateEnabled) {
+    var autorotate = Marzipano.autorotate({ yawSpeed: 0.03 });
+    viewer.startMovement(autorotate);
+    viewer.setIdleMovement(3000, autorotate);
+  }
+
+  var viewControlOverlay = document.getElementById("viewControlOverlay");
+  if (viewControlOverlay) {
+    viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
+  }
+
+  var fullscreenOverlay = document.getElementById("fullscreenOverlay");
+  if (fullscreenOverlay) {
+    fullscreenOverlay.style.display = settings.fullscreenButton ? "flex" : "none";
+  }
+
+  if (scenes.length > 0) {
+    switchScene(scenes[0]);
+  }
+})();`;
+  }
+
+  function getDefaultExportStyleCss() {
+    return `* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #000; color: #fff; }
+#pano { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+#titleBar { position: absolute; top: 16px; left: 16px; z-index: 100; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 15px; }
+#sceneList { position: absolute; top: 68px; left: 16px; z-index: 100; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); max-height: 60vh; overflow-y: auto; }
+#sceneList ul { list-style: none; }
+#sceneList li { padding: 8px 12px; cursor: pointer; border-radius: 4px; font-size: 13px; margin-bottom: 4px; background: rgba(255, 255, 255, 0.08); transition: background 0.15s; }
+#sceneList li:hover { background: rgba(43, 169, 223, 0.7); }
+.hotspot { position: absolute; cursor: pointer; }
+.info-hotspot .info-text { display: none; position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); width: 220px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; color: white; z-index: 100; }
+.info-hotspot:hover .info-text { display: block; }
+.info-hotspot .info-text h3 { font-size: 14px; margin-bottom: 6px; color: #2ba9df; }
+.info-hotspot .info-text p { font-size: 12px; line-height: 1.4; color: #ddd; }
+.ctrl-btn { width: 34px; height: 34px; border: none; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); color: white; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.ctrl-btn:hover { background: rgba(43, 169, 223, 0.8); }
+#fullscreenOverlay { position: absolute; top: 16px; right: 16px; z-index: 100; }
+#viewControlOverlay { position: absolute; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 6px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); padding: 8px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.dpad { display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(3, 34px); gap: 4px; }
+#btnUp { grid-column: 2; grid-row: 1; }
+#btnLeft { grid-column: 1; grid-row: 2; }
+#btnRight { grid-column: 3; grid-row: 2; }
+#btnDown { grid-column: 2; grid-row: 3; }
+.zoom-pad { display: flex; gap: 4px; margin-top: 4px; }
+.zoom-pad button { flex: 1; }`;
+  }
+
   function updateExportedIndexHtml(indexHtml, tourData) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(indexHtml, "text/html");
@@ -3115,11 +3327,22 @@
       : "index.html";
 
     zip.file(archiveConfig.dataFilePath, dataContent);
-    if (archiveConfig.preservedFiles[indexHtmlPath]) {
+
+    if (archiveConfig.preservedFiles && archiveConfig.preservedFiles[indexHtmlPath]) {
       const decoder = new TextDecoder();
       const sourceHtml = decoder.decode(archiveConfig.preservedFiles[indexHtmlPath]);
       zip.file(indexHtmlPath, updateExportedIndexHtml(sourceHtml, exportData));
+    } else {
+      // Standalone webserver ready default files
+      const marzipanoJsCode = await fetchLocalMarzipanoJs();
+      if (marzipanoJsCode) {
+        zip.file("vendor/marzipano.js", marzipanoJsCode);
+      }
+      zip.file("index.html", getDefaultExportIndexHtml(exportData));
+      zip.file("index.js", getDefaultExportIndexJs());
+      zip.file("style.css", getDefaultExportStyleCss());
     }
+
     return zip.generateAsync({ type: "blob" });
   }
 
