@@ -5,6 +5,14 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.4] - 2026-08-21
+
+### Fix: Restore Standard Marzipano Initial View FOV (`limit.traditional`)
+
+- **Fix Over-Zoomed Initial View**:
+  - Removed 3rd argument in `RectilinearView.limit.traditional(maxResolution, maxFov)` which previously constrained pitch limits and caused the initial camera view to render too zoomed in.
+  - Restored standard Marzipano initial perspective (90° initial FOV, 100° max FOV).
+
 ## [1.9.3] - 2026-08-21
 
 ### Critical Fixes: Zoom Controls, Scene List Toggle, & Brand Logo Hiding

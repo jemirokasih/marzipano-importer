@@ -379,7 +379,7 @@
   }
 
   // GitHub Auto-Update Engine
-  const APP_VERSION = "v1.9.3";
+  const APP_VERSION = "v1.9.4";
   const GITHUB_REPO_OWNER = "jemirokasih";
   const GITHUB_REPO_NAME = "marzipano-importer";
 
@@ -1569,8 +1569,7 @@
     const initialView = overrideInitialView || sceneData.initialViewParameters;
     const limiter = Marzipano.RectilinearView.limit.traditional(
       sceneData.faceSize || 4096,
-      (120 * Math.PI) / 180,
-      (10 * Math.PI) / 180
+      (100 * Math.PI) / 180
     );
     const view = new Marzipano.RectilinearView(
       initialView,
@@ -3471,8 +3470,7 @@
 
     var limiter = Marzipano.RectilinearView.limit.traditional(
       data.faceSize || 4096,
-      (120 * Math.PI) / 180,
-      (10 * Math.PI) / 180
+      (100 * Math.PI) / 180
     );
     var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
     var scene = viewer.createScene({
