@@ -376,7 +376,7 @@
   }
 
   // GitHub Auto-Update Engine
-  const APP_VERSION = "v1.9.1";
+  const APP_VERSION = "v1.9.2";
   const GITHUB_REPO_OWNER = "jemirokasih";
   const GITHUB_REPO_NAME = "marzipano-importer";
 
@@ -4230,20 +4230,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
       }
     }
 
-    if (archiveConfig.preservedFiles && archiveConfig.preservedFiles[indexHtmlPath]) {
-      const decoder = new TextDecoder();
-      const sourceHtml = decoder.decode(archiveConfig.preservedFiles[indexHtmlPath]);
-      zip.file(indexHtmlPath, updateExportedIndexHtml(sourceHtml, exportData));
-    } else {
-      // Standalone webserver ready default files
-      const marzipanoJsCode = await fetchLocalMarzipanoJs();
-      if (marzipanoJsCode) {
-        zip.file("vendor/marzipano.js", marzipanoJsCode);
-      }
-      zip.file("index.html", getDefaultExportIndexHtml(exportData));
-      zip.file("index.js", getDefaultExportIndexJs());
-      zip.file("style.css", getDefaultExportStyleCss());
+    // Ensure standalone webserver ready files with fixed controls (index.html, index.js, style.css)
+    const marzipanoJsCode = await fetchLocalMarzipanoJs();
+    if (marzipanoJsCode && !zip.file("vendor/marzipano.js")) {
+      zip.file("vendor/marzipano.js", marzipanoJsCode);
     }
+    zip.file("index.html", getDefaultExportIndexHtml(exportData));
+    zip.file("index.js", getDefaultExportIndexJs());
+    zip.file("style.css", getDefaultExportStyleCss());
 
     return zip.generateAsync({ type: "blob" });
   }
