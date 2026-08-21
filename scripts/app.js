@@ -379,7 +379,7 @@
   }
 
   // GitHub Auto-Update Engine
-  const APP_VERSION = "v1.9.4";
+  const APP_VERSION = "v1.9.5";
   const GITHUB_REPO_OWNER = "jemirokasih";
   const GITHUB_REPO_NAME = "marzipano-importer";
 
@@ -4152,6 +4152,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
     return {
       id: scene.id,
       name: scene.name,
+      showInSceneList: scene.showInSceneList !== false,
       levels: exportLevels,
       faceSize: maxFaceSize,
       initialViewParameters: scene.initialViewParameters,
@@ -4215,6 +4216,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-sy
         exportedScenes.push({
           id: scene.id,
           name: scene.name,
+          showInSceneList: scene.showInSceneList !== false,
           levels: scene.levels,
           faceSize: scene.faceSize,
           initialViewParameters: scene.initialViewParameters,

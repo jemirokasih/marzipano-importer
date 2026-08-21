@@ -5,6 +5,14 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.5] - 2026-08-21
+
+### Critical Fix: Export Scene `showInSceneList` Property (`exportData.scenes`)
+
+- **Fix Hidden Scenes Still Appearing in Exported Scene List**:
+  - Previously, individual scene objects exported into `data.js` omitted the `showInSceneList` property, causing exported tours to display scenes that were unchecked/hidden in the editor.
+  - Added `showInSceneList: scene.showInSceneList !== false` to both `exportEquirectScene` and `buildExportArchive` so hidden scenes are correctly omitted from exported scene lists.
+
 ## [1.9.4] - 2026-08-21
 
 ### Fix: Restore Standard Marzipano Initial View FOV (`limit.traditional`)
