@@ -58,6 +58,9 @@
     autorotateEnabled: document.getElementById("autorotateEnabled"),
     viewControlButtons: document.getElementById("viewControlButtons"),
     fullscreenButton: document.getElementById("fullscreenButton"),
+    showHeaderToggle: document.getElementById("showHeaderToggle"),
+    showSceneTitleToggle: document.getElementById("showSceneTitleToggle"),
+    showSceneListToggle: document.getElementById("showSceneListToggle"),
 
     // Workspace
     preview: document.getElementById("preview"),
@@ -376,7 +379,7 @@
   }
 
   // GitHub Auto-Update Engine
-  const APP_VERSION = "v1.9.2";
+  const APP_VERSION = "v1.9.3";
   const GITHUB_REPO_OWNER = "jemirokasih";
   const GITHUB_REPO_NAME = "marzipano-importer";
 
@@ -621,6 +624,7 @@
     // UI/UX Styling Settings
     if (elements.showHeaderToggle) elements.showHeaderToggle.addEventListener("change", updateSettings);
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.addEventListener("change", updateSettings);
+    if (elements.showSceneListToggle) elements.showSceneListToggle.addEventListener("change", updateSettings);
     if (elements.themeNavbarBgColor) elements.themeNavbarBgColor.addEventListener("input", updateSettings);
     if (elements.themeNavbarBgOpacity) elements.themeNavbarBgOpacity.addEventListener("input", updateSettings);
     if (elements.themeFullscreenPos) elements.themeFullscreenPos.addEventListener("change", updateSettings);
@@ -663,6 +667,8 @@
       elements.toggleSceneListBtn.addEventListener("click", () => {
         if (elements.sceneListPreviewContainer) {
           elements.sceneListPreviewContainer.classList.toggle("collapsed");
+          if (!state.tourData.settings) state.tourData.settings = {};
+          state.tourData.settings.sceneListCollapsed = elements.sceneListPreviewContainer.classList.contains("collapsed");
         }
       });
     }
@@ -940,6 +946,7 @@
 
     if (elements.showHeaderToggle) elements.showHeaderToggle.checked = settings.showHeader !== false;
     if (elements.showSceneTitleToggle) elements.showSceneTitleToggle.checked = settings.showSceneTitle !== false;
+    if (elements.showSceneListToggle) elements.showSceneListToggle.checked = settings.showSceneList !== false;
     if (elements.themeNavbarBgColor) elements.themeNavbarBgColor.value = settings.themeNavbarBgColor || "#000000";
     if (elements.themeNavbarBgOpacity) elements.themeNavbarBgOpacity.value = navBgOpacity;
     if (elements.themeFullscreenPos) elements.themeFullscreenPos.value = settings.themeFullscreenPos || "navbar";
@@ -1153,7 +1160,9 @@
     }
 
     // 8. Scene List Container & Overlay Sidebar Positioning
+    const isSceneListEnabled = settings.showSceneList !== false;
     if (elements.sceneListOverlay) {
+      elements.sceneListOverlay.style.display = isSceneListEnabled ? "flex" : "none";
       elements.sceneListOverlay.style.top = isNavbarEnabled ? "64px" : "16px";
     }
     if (elements.sceneListPreviewContainer) {
@@ -1560,7 +1569,8 @@
     const initialView = overrideInitialView || sceneData.initialViewParameters;
     const limiter = Marzipano.RectilinearView.limit.traditional(
       sceneData.faceSize || 4096,
-      (100 * Math.PI) / 180
+      (120 * Math.PI) / 180,
+      (10 * Math.PI) / 180
     );
     const view = new Marzipano.RectilinearView(
       initialView,
@@ -2586,6 +2596,7 @@
       viewControlButtons: elements.viewControlButtons.checked,
       showHeader: elements.showHeaderToggle ? elements.showHeaderToggle.checked : true,
       showSceneTitle: elements.showSceneTitleToggle ? elements.showSceneTitleToggle.checked : true,
+      showSceneList: elements.showSceneListToggle ? elements.showSceneListToggle.checked : true,
       themeNavbarBgColor: elements.themeNavbarBgColor ? elements.themeNavbarBgColor.value : "#000000",
       themeNavbarBgOpacity: isNaN(parsedNavBgOpacity) ? 85 : parsedNavBgOpacity,
       themeFullscreenPos: elements.themeFullscreenPos ? elements.themeFullscreenPos.value : "navbar",
@@ -3460,7 +3471,8 @@
 
     var limiter = Marzipano.RectilinearView.limit.traditional(
       data.faceSize || 4096,
-      (100 * Math.PI) / 180
+      (120 * Math.PI) / 180,
+      (10 * Math.PI) / 180
     );
     var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
     var scene = viewer.createScene({
@@ -3756,32 +3768,40 @@
   var brandLogoImg = document.getElementById("brandLogo");
 
   if (brandLogoImg) {
-    brandLogoImg.style.maxHeight = "40px";
-    brandLogoImg.style.maxWidth = "160px";
-    brandLogoImg.style.objectFit = "contain";
-    brandLogoImg.style.display = "block";
+    if (settings.logoUrl) {
+      brandLogoImg.style.maxHeight = "40px";
+      brandLogoImg.style.maxWidth = "160px";
+      brandLogoImg.style.objectFit = "contain";
+      brandLogoImg.style.display = "block";
 
-    if (logoPos === "navbar" && isNavbarEnabled && navbarLogoSlot) {
-      navbarLogoSlot.appendChild(brandLogoImg);
-    } else if (brandLogoOverlay) {
-      brandLogoOverlay.appendChild(brandLogoImg);
-      brandLogoOverlay.style.display = "block";
-      var lPos = logoPos.indexOf("overlay-") === 0 ? logoPos.replace("overlay-", "") : logoPos;
-      brandLogoOverlay.style.top = lPos.indexOf("top") !== -1 ? (isNavbarEnabled ? "64px" : "16px") : "auto";
-      brandLogoOverlay.style.bottom = lPos.indexOf("bottom") !== -1 ? "20px" : "auto";
-      brandLogoOverlay.style.left = lPos.indexOf("left") !== -1 ? "20px" : "auto";
-      brandLogoOverlay.style.right = lPos.indexOf("right") !== -1 ? "20px" : "auto";
+      if (logoPos === "navbar" && isNavbarEnabled && navbarLogoSlot) {
+        navbarLogoSlot.appendChild(brandLogoImg);
+      } else if (brandLogoOverlay) {
+        brandLogoOverlay.appendChild(brandLogoImg);
+        brandLogoOverlay.style.display = "block";
+        var lPos = logoPos.indexOf("overlay-") === 0 ? logoPos.replace("overlay-", "") : logoPos;
+        brandLogoOverlay.style.top = lPos.indexOf("top") !== -1 ? (isNavbarEnabled ? "64px" : "16px") : "auto";
+        brandLogoOverlay.style.bottom = lPos.indexOf("bottom") !== -1 ? "20px" : "auto";
+        brandLogoOverlay.style.left = lPos.indexOf("left") !== -1 ? "20px" : "auto";
+        brandLogoOverlay.style.right = lPos.indexOf("right") !== -1 ? "20px" : "auto";
+      }
+    } else {
+      brandLogoImg.style.display = "none";
+      if (brandLogoOverlay) brandLogoOverlay.style.display = "none";
     }
   }
 
+  var isSceneListEnabled = settings.showSceneList !== false;
   var sceneListOverlay = document.getElementById("sceneListOverlay");
+  var sceneListContainer = document.getElementById("sceneListContainer");
   if (sceneListOverlay) {
+    sceneListOverlay.style.display = isSceneListEnabled ? "flex" : "none";
     sceneListOverlay.style.top = isNavbarEnabled ? "64px" : "16px";
   }
 
   var viewControlOverlay = document.getElementById("viewControlOverlay");
   if (viewControlOverlay) {
-    viewControlOverlay.style.display = settings.viewControlButtons ? "flex" : "none";
+    viewControlOverlay.style.display = (settings.viewControlButtons !== false) ? "flex" : "none";
     var pos = settings.themeControlPos || "bottom-right";
     viewControlOverlay.style.top = pos.indexOf("top") !== -1 ? (isNavbarEnabled ? "64px" : "20px") : "auto";
     viewControlOverlay.style.bottom = pos.indexOf("bottom") !== -1 ? "20px" : "auto";
@@ -3793,6 +3813,9 @@
   }
 
   if (sceneListContainer) {
+    if (settings.sceneListCollapsed === true) {
+      sceneListContainer.classList.add("collapsed");
+    }
     if (settings.themeBorderRadius !== undefined) sceneListContainer.style.borderRadius = settings.themeBorderRadius + "px";
     if (settings.themePadding !== undefined) sceneListContainer.style.padding = settings.themePadding + "px";
     sceneListContainer.style.backgroundColor = panelBgRgba;

@@ -5,6 +5,19 @@ All notable changes to the Marzipano Tour Importer will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2026-08-21
+
+### Critical Fixes: Zoom Controls, Scene List Toggle, & Brand Logo Hiding
+
+- **Fix Zoom Controls Overlay Display Condition (`settings.viewControlButtons !== false`)**:
+  - Changed strict truthiness check so zoom control panel is enabled by default when `viewControlButtons` is undefined.
+  - Expanded Marzipano `RectilinearView` FOV limits to min 10° and max 120° for wide, smooth zoom range.
+- **Fix Scene List Visibility & Collapse Sync (`showSceneList` & `sceneListCollapsed`)**:
+  - Added "Show Scene List" toggle under UI/UX customization settings (`#showSceneListToggle`).
+  - Exported tours now respect hidden or collapsed scene list state set in the editor.
+- **Fix Brand Logo Display (`settings.logoUrl`)**:
+  - Brand logo element is now strictly hidden if no logo image has been uploaded, preventing broken/empty image placeholders.
+
 ## [1.9.2] - 2026-08-21
 
 ### Critical Fix: Enforce Updated Runtime Engine in Exported ZIP (`buildExportArchive`)
