@@ -376,7 +376,7 @@
   }
 
   // GitHub Auto-Update Engine
-  const APP_VERSION = "v1.9.0";
+  const APP_VERSION = "v1.9.1";
   const GITHUB_REPO_OWNER = "jemirokasih";
   const GITHUB_REPO_NAME = "marzipano-importer";
 
@@ -792,22 +792,22 @@
 
       switch (action) {
         case "up":
-          view.setPitch(currentPitch + 0.05);
+          view.setParameters({ pitch: currentPitch + 0.05 });
           break;
         case "down":
-          view.setPitch(currentPitch - 0.05);
+          view.setParameters({ pitch: currentPitch - 0.05 });
           break;
         case "left":
-          view.setYaw(currentYaw - 0.06);
+          view.setParameters({ yaw: currentYaw - 0.06 });
           break;
         case "right":
-          view.setYaw(currentYaw + 0.06);
+          view.setParameters({ yaw: currentYaw + 0.06 });
           break;
         case "zoomIn":
-          view.setFov(currentFov * 0.85);
+          view.setParameters({ fov: currentFov * 0.85 });
           break;
         case "zoomOut":
-          view.setFov(currentFov * 1.18);
+          view.setParameters({ fov: currentFov * 1.18 });
           break;
       }
     }
@@ -3662,12 +3662,12 @@
       var fov = view.fov();
 
       switch (action) {
-        case "up": view.setPitch(pitch + 0.05); break;
-        case "down": view.setPitch(pitch - 0.05); break;
-        case "left": view.setYaw(yaw - 0.06); break;
-        case "right": view.setYaw(yaw + 0.06); break;
-        case "zoomIn": view.setFov(fov * 0.85); break;
-        case "zoomOut": view.setFov(fov * 1.18); break;
+        case "up": view.setParameters({ pitch: pitch + 0.05 }); break;
+        case "down": view.setParameters({ pitch: pitch - 0.05 }); break;
+        case "left": view.setParameters({ yaw: yaw - 0.06 }); break;
+        case "right": view.setParameters({ yaw: yaw + 0.06 }); break;
+        case "zoomIn": view.setParameters({ fov: fov * 0.85 }); break;
+        case "zoomOut": view.setParameters({ fov: fov * 1.18 }); break;
       }
     }
 
